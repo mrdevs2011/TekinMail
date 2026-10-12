@@ -141,9 +141,10 @@ export default async function handler(req, res) {
     }
 
     if (createdEmails.length === 0) {
+      const combinedError = errorsList.length > 0 ? errorsList.join('; ') : 'Unknown Mail.tm or Supabase failure';
       return res.status(500).json({
         success: false,
-        error: 'Could not create accounts on Mail.tm.',
+        error: combinedError,
         details: errorsList
       });
     }

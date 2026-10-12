@@ -175,7 +175,8 @@ async function handleAddFive() {
       showToast(`+${data.added_count} addresses allocated`);
       startFiveMinuteCooldown();
     } else {
-      showToast('allocation failed: ' + (data.error || 'unknown'));
+      const errMsg = data.error || (data.details ? data.details.join(', ') : 'unknown');
+      showToast('allocation failed: ' + errMsg);
       unlockButton();
     }
   } catch (err) {
