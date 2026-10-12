@@ -17,63 +17,33 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'account_key is required' });
     }
 
-    const { data: account } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('account_key', accountKey)
-      .single();
+    // Supabase messages jadvalidan xatlarni olamiz
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`account_key.eq.${accountKey},account_key.eq.global`)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    if (!account) {
-      return res.status(404).json({ success: false, error: 'Account not found' });
-    }
-
-    const { data: emails } = await supabase
-      .from('emails')
-      .select('id, address, token')
-      .eq('account_id', account.id);
-
-    if (!emails || emails.length === 0) {
+    if (error) {
       return res.status(200).json({ success: true, messages: [] });
     }
 
-    // Har bir email tokeni bo'yicha xatlarni parallel olish
-    const fetchPromises = emails.map(async (em) => {
-      if (!em.token) return [];
-      try {
-        const inboxRes = await fetch(`https://api.tempmail.lol/auth/${encodeURIComponent(em.token)}`, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'TekinMail/1.0'
-          }
-        });
-
-        if (!inboxRes.ok) return [];
-        const inboxData = await inboxRes.json();
-        const emailList = inboxData.email || [];
-
-        return emailList.map((m, idx) => ({
-          id: `${em.id}_${idx}_${Date.now()}`,
-          token: em.token,
-          to_email: em.address,
-          from: m.from || 'Unknown Sender',
-          from_address: m.from || '',
-          subject: m.subject || '(no subject)',
-          intro: m.body ? m.body.substring(0, 120) : '',
-          body: m.body || '',
-          html: m.html || '',
-          created_at: m.date ? new Date(m.date).toISOString() : new Date().toISOString()
-        }));
-      } catch (e) {
-        return [];
-      }
-    });
-
-    const results = await Promise.all(fetchPromises);
-    const allMessages = results.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const formatted = (messages || []).map(m => ({
+      id: m.id,
+      to_email: m.to_email,
+      from: m.from_address || 'Unknown Sender',
+      from_address: m.from_address,
+      subject: m.subject || '(no subject)',
+      intro: (m.body || m.subject || '').substring(0, 100),
+      body: m.body,
+      html: m.html,
+      created_at: m.created_at
+    }));
 
     return res.status(200).json({
       success: true,
-      messages: allMessages
+      messages: formatted
     });
 
   } catch (err) {

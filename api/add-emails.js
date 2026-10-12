@@ -1,6 +1,6 @@
 import { getSupabase } from './_supabase.js';
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const DOMAIN = 'tekinmail.abrdns.com';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,7 +18,6 @@ export default async function handler(req, res) {
   try {
     const supabase = getSupabase();
 
-    // Body parsing
     let body = req.body;
     if (typeof body === 'string') {
       try {
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
       account = existingAccount;
     }
 
-    // Agar hisob bo'lmasa, yangi yaratamiz
+    // Hisob bo'lmasa, yangi hisob ochish
     if (!account) {
       account_key = 'tm_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
       const { data: newAcc, error: createErr } = await supabase
@@ -50,80 +49,45 @@ export default async function handler(req, res) {
         .single();
 
       if (createErr || !newAcc) {
-        return res.status(500).json({ 
-          success: false, 
-          error: 'Supabase accounts error: ' + (createErr?.message || '') 
-        });
+        return res.status(500).json({ success: false, error: 'Supabase accounts error: ' + (createErr?.message || '') });
       }
       account = newAcc;
     }
 
-    // 5 ta yangi email yaratish (tempmail.lol orqali)
+    // 5 ta yangi unikal toza email yaratish (tekinmail.abrdns.com)
+    const prefixes = [
+      'dev', 'cl', 'ai', 'core', 'user', 'lab', 'box', 'hub', 'pro', 'bot'
+    ];
     const createdEmails = [];
-    const errorsList = [];
 
     for (let i = 0; i < 5; i++) {
-      try {
-        const genRes = await fetch('https://api.tempmail.lol/generate', {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'TekinMail/1.0'
-          }
-        });
+      const randPref = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const randNum = Math.floor(1000 + Math.random() * 9000);
+      const emailAddress = `${randPref}_${randNum}@${DOMAIN}`;
 
-        if (!genRes.ok) {
-          const errTxt = await genRes.text();
-          errorsList.push(`tempmail API HTTP ${genRes.status}: ${errTxt}`);
-          continue;
-        }
+      const { data: insertedEmail, error: insErr } = await supabase
+        .from('emails')
+        .insert([{
+          account_id: account.id,
+          mailtm_id: 'custom_' + Date.now() + '_' + i,
+          address: emailAddress,
+          password: 'none',
+          token: 'token_' + Math.random().toString(36).substring(2)
+        }])
+        .select('id, address, created_at')
+        .single();
 
-        const genData = await genRes.json();
-        const address = genData.address;
-        const token = genData.token;
-
-        if (!address || !token) {
-          errorsList.push('Invalid response from tempmail API');
-          continue;
-        }
-
-        // Supabase'ga yozish
-        const { data: insertedEmail, error: insErr } = await supabase
-          .from('emails')
-          .insert([{
-            account_id: account.id,
-            mailtm_id: token.substring(0, 36), // ID o'rnida token qismi
-            address: address,
-            password: 'none',
-            token: token
-          }])
-          .select('id, address, created_at')
-          .single();
-
-        if (insErr) {
-          errorsList.push(`Supabase insert failed: ${insErr.message}`);
-        } else if (insertedEmail) {
-          createdEmails.push(insertedEmail);
-        }
-
-        await sleep(150); // Xavfsiz oraliq
-      } catch (err) {
-        errorsList.push(`Loop error: ${err.message}`);
+      if (insertedEmail) {
+        createdEmails.push(insertedEmail);
       }
-    }
-
-    if (createdEmails.length === 0) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to allocate addresses: ' + errorsList.join('; '),
-        details: errorsList
-      });
     }
 
     return res.status(200).json({
       success: true,
       account_key: account.account_key,
       added_count: createdEmails.length,
-      emails: createdEmails
+      emails: createdEmails,
+      domain_used: DOMAIN
     });
 
   } catch (err) {
