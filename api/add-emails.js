@@ -1,7 +1,14 @@
 import { getSupabase } from './_supabase.js';
 
 const MAIL_TM_API = 'https://api.mail.tm';
+const FALLBACK_DOMAINS = ['maxxspace.com'];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const DEFAULT_HEADERS = {
+  'Accept': 'application/json',
+  'Content-Type': 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,49 +52,49 @@ export default async function handler(req, res) {
     if (accErr || !account) {
       return res.status(404).json({ 
         success: false, 
-        error: `Account with key '${account_key}' not found in Supabase. (${accErr?.message || ''})` 
+        error: `Account not found: ${accErr?.message || ''}` 
       });
     }
 
-    // 2. Mail.tm domenlarini olish
-    const domainsRes = await fetch(`${MAIL_TM_API}/domains`);
-    if (!domainsRes.ok) {
-      const errText = await domainsRes.text();
-      return res.status(502).json({ 
-        success: false, 
-        error: `Mail.tm domain fetch failed: ${domainsRes.status} ${errText}` 
+    // 2. Domen olish (Failover / Fallback bilan)
+    let targetDomain = FALLBACK_DOMAINS[0];
+
+    try {
+      const domainsRes = await fetch(`${MAIL_TM_API}/domains`, {
+        headers: DEFAULT_HEADERS
       });
+
+      if (domainsRes.ok) {
+        const domainsData = await domainsRes.json();
+        const domainList = domainsData['hydra:member'] || [];
+        if (domainList.length > 0 && domainList[0].domain) {
+          targetDomain = domainList[0].domain;
+        }
+      }
+    } catch (domainErr) {
+      console.warn('Domain fetch failed, using fallback domain:', targetDomain);
     }
-
-    const domainsData = await domainsRes.json();
-    const domainList = domainsData['hydra:member'] || [];
-
-    if (domainList.length === 0) {
-      return res.status(503).json({ success: false, error: 'Mail.tm returned no active domains' });
-    }
-
-    const targetDomain = domainList[0].domain;
 
     // 3. 5 ta unikal email yaratish
     const createdEmails = [];
     const errorsList = [];
 
     for (let i = 0; i < 5; i++) {
-      const randStr = Math.random().toString(36).substring(2, 8) + Date.now().toString(36).substring(4);
-      const emailAddress = `tk_${randStr}@${targetDomain}`;
+      const randStr = Math.random().toString(36).substring(2, 7) + Date.now().toString(36).substring(4, 8);
+      const emailAddress = `dev_${randStr}@${targetDomain}`;
       const password = 'Pass_' + Math.random().toString(36).substring(2, 10) + '9!';
 
       try {
         // Mail.tm ga ro'yxatdan o'tkazish
         const createRes = await fetch(`${MAIL_TM_API}/accounts`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: DEFAULT_HEADERS,
           body: JSON.stringify({ address: emailAddress, password: password })
         });
 
         if (!createRes.ok) {
           const errDetail = await createRes.text();
-          errorsList.push(`Failed ${emailAddress}: ${errDetail}`);
+          errorsList.push(`Failed ${emailAddress}: HTTP ${createRes.status} ${errDetail}`);
           continue;
         }
 
@@ -95,10 +102,10 @@ export default async function handler(req, res) {
         const mailtmId = createData.id;
 
         // Token olish
-        await sleep(150);
+        await sleep(200);
         const tokenRes = await fetch(`${MAIL_TM_API}/token`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: DEFAULT_HEADERS,
           body: JSON.stringify({ address: emailAddress, password: password })
         });
 
@@ -136,7 +143,7 @@ export default async function handler(req, res) {
     if (createdEmails.length === 0) {
       return res.status(500).json({
         success: false,
-        error: 'Failed to create any email.',
+        error: 'Could not create accounts on Mail.tm.',
         details: errorsList
       });
     }
@@ -145,7 +152,7 @@ export default async function handler(req, res) {
       success: true,
       added_count: createdEmails.length,
       emails: createdEmails,
-      warnings: errorsList.length > 0 ? errorsList : undefined
+      domain_used: targetDomain
     });
 
   } catch (err) {
