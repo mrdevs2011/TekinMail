@@ -1,0 +1,9 @@
+{
+  "name": "tekinmail",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Unlimited temporary email manager with Supabase and Vercel",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}
