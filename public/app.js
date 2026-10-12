@@ -121,23 +121,7 @@ formPass2.addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// 2. THEME CONTROLLER
-// ==========================================
-
-function initTheme() {
-  const theme = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-themeToggle.addEventListener('click', () => {
-  const curr = document.documentElement.getAttribute('data-theme') || 'dark';
-  const next = curr === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem(STORAGE_KEY_THEME, next);
-});
-
-// ==========================================
-// 3. COOLDOWN TAYMER (5 MIN, LOCALSTORAGE)
+// 2. COOLDOWN TAYMER (5 MIN, LOCALSTORAGE)
 // ==========================================
 
 function checkCooldown() {
@@ -329,5 +313,4 @@ function showToast(txt) {
 }
 
 // START
-initTheme();
 checkSession();

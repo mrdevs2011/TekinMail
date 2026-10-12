@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz" data-theme="dark">
+<html lang="uz">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,30 +15,19 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect width="20" height="16" x="2" y="4" rx="2"/>
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
         </svg>
         <span class="brand-name">tekinmail</span>
         <span class="badge">@tekinmail.abrdns.com</span>
       </div>
-
-      <div class="header-right">
-        <button id="themeToggle" class="btn-icon" title="Toggle theme">
-          <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-          </svg>
-          <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-          </svg>
-        </button>
-      </div>
     </header>
 
-    <!-- 1. LOGIN CARD (2-BOSQICHLI) -->
+    <!-- 1. LOGIN CARD (2-STEP) -->
     <main id="loginCard" class="card">
       <div class="login-header">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -52,14 +41,14 @@
         <button type="submit" class="btn btn-action full-width">continue</button>
       </form>
 
-      <!-- Step 2: Pass 2 (Yashirin turadi) -->
+      <!-- Step 2: Pass 2 -->
       <form id="formPass2" class="login-form hidden">
         <input type="password" id="inputPass2" placeholder="enter password 2 (security key)..." autocomplete="current-password" required>
         <button type="submit" class="btn btn-action full-width">verify & access</button>
       </form>
     </main>
 
-    <!-- 2. ASOSIY BOSHQARUV KARTASI (LOGIN BO'LGACH OCHILADI) -->
+    <!-- 2. ASOSIY BOSHQARUV PANELI -->
     <main id="appCard" class="card hidden">
       <div class="action-bar">
         <div class="meta">
@@ -78,17 +67,17 @@
         </button>
       </div>
 
-      <!-- Cooldown Warning -->
+      <!-- Cooldown Box -->
       <div id="cooldownBanner" class="cooldown-box hidden">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
-        <span>cooldown active: <strong id="cooldownTimerDisplay">05:00</strong></span>
+        <span>cooldown: <strong id="cooldownTimerDisplay">05:00</strong></span>
       </div>
 
-      <!-- Search -->
+      <!-- Search Box -->
       <div class="search-box">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
         <input type="text" id="emailSearch" placeholder="filter aliases..." autocomplete="off" spellcheck="false">
