@@ -1,14 +1,6 @@
 import { getSupabase } from './_supabase.js';
 
-const MAIL_TM_API = 'https://api.mail.tm';
-const FALLBACK_DOMAINS = ['maxxspace.com'];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const DEFAULT_HEADERS = {
-  'Accept': 'application/json',
-  'Content-Type': 'application/json',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,7 +40,7 @@ export default async function handler(req, res) {
       account = existingAccount;
     }
 
-    // Agar hisob topilmasa yoki berilmagan bo'lsa, o'zimiz yaratamiz
+    // Agar hisob bo'lmasa, yangi yaratamiz
     if (!account) {
       account_key = 'tm_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
       const { data: newAcc, error: createErr } = await supabase
@@ -58,68 +50,40 @@ export default async function handler(req, res) {
         .single();
 
       if (createErr || !newAcc) {
-        return res.status(500).json({ success: false, error: 'Failed to provision account: ' + (createErr?.message || '') });
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Supabase accounts error: ' + (createErr?.message || '') 
+        });
       }
       account = newAcc;
     }
 
-    // 2. Domen olish (Failover / Fallback bilan)
-    let targetDomain = FALLBACK_DOMAINS[0];
-
-    try {
-      const domainsRes = await fetch(`${MAIL_TM_API}/domains`, {
-        headers: DEFAULT_HEADERS
-      });
-
-      if (domainsRes.ok) {
-        const domainsData = await domainsRes.json();
-        const domainList = domainsData['hydra:member'] || [];
-        if (domainList.length > 0 && domainList[0].domain) {
-          targetDomain = domainList[0].domain;
-        }
-      }
-    } catch (domainErr) {
-      console.warn('Domain fetch failed, using fallback domain:', targetDomain);
-    }
-
-    // 3. 5 ta unikal email yaratish
+    // 5 ta yangi email yaratish (tempmail.lol orqali)
     const createdEmails = [];
     const errorsList = [];
 
     for (let i = 0; i < 5; i++) {
-      const randStr = Math.random().toString(36).substring(2, 7) + Date.now().toString(36).substring(4, 8);
-      const emailAddress = `dev_${randStr}@${targetDomain}`;
-      const password = 'Pass_' + Math.random().toString(36).substring(2, 10) + '9!';
-
       try {
-        // Mail.tm ga ro'yxatdan o'tkazish
-        const createRes = await fetch(`${MAIL_TM_API}/accounts`, {
-          method: 'POST',
-          headers: DEFAULT_HEADERS,
-          body: JSON.stringify({ address: emailAddress, password: password })
+        const genRes = await fetch('https://api.tempmail.lol/generate', {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'TekinMail/1.0'
+          }
         });
 
-        if (!createRes.ok) {
-          const errDetail = await createRes.text();
-          errorsList.push(`Failed ${emailAddress}: HTTP ${createRes.status} ${errDetail}`);
+        if (!genRes.ok) {
+          const errTxt = await genRes.text();
+          errorsList.push(`tempmail API HTTP ${genRes.status}: ${errTxt}`);
           continue;
         }
 
-        const createData = await createRes.json();
-        const mailtmId = createData.id;
+        const genData = await genRes.json();
+        const address = genData.address;
+        const token = genData.token;
 
-        // Token olish
-        await sleep(200);
-        const tokenRes = await fetch(`${MAIL_TM_API}/token`, {
-          method: 'POST',
-          headers: DEFAULT_HEADERS,
-          body: JSON.stringify({ address: emailAddress, password: password })
-        });
-
-        let token = '';
-        if (tokenRes.ok) {
-          const tokenData = await tokenRes.json();
-          token = tokenData.token;
+        if (!address || !token) {
+          errorsList.push('Invalid response from tempmail API');
+          continue;
         }
 
         // Supabase'ga yozish
@@ -127,9 +91,9 @@ export default async function handler(req, res) {
           .from('emails')
           .insert([{
             account_id: account.id,
-            mailtm_id: mailtmId,
-            address: emailAddress,
-            password: password,
+            mailtm_id: token.substring(0, 36), // ID o'rnida token qismi
+            address: address,
+            password: 'none',
             token: token
           }])
           .select('id, address, created_at')
@@ -141,17 +105,16 @@ export default async function handler(req, res) {
           createdEmails.push(insertedEmail);
         }
 
-        await sleep(250);
-      } catch (loopErr) {
-        errorsList.push(`Loop error: ${loopErr.message}`);
+        await sleep(150); // Xavfsiz oraliq
+      } catch (err) {
+        errorsList.push(`Loop error: ${err.message}`);
       }
     }
 
     if (createdEmails.length === 0) {
-      const combinedError = errorsList.length > 0 ? errorsList.join('; ') : 'Unknown Mail.tm or Supabase failure';
       return res.status(500).json({
         success: false,
-        error: combinedError,
+        error: 'Failed to allocate addresses: ' + errorsList.join('; '),
         details: errorsList
       });
     }
@@ -160,8 +123,7 @@ export default async function handler(req, res) {
       success: true,
       account_key: account.account_key,
       added_count: createdEmails.length,
-      emails: createdEmails,
-      domain_used: targetDomain
+      emails: createdEmails
     });
 
   } catch (err) {

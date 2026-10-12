@@ -281,34 +281,26 @@ function renderMessages() {
 }
 
 // INSPECTION MODAL
-async function openMessageDetail(messageId, toEmail) {
+function openMessageDetail(messageId, toEmail) {
+  const found = currentMessages.find(m => m.id === messageId);
   messageModal.classList.remove('hidden');
-  modalSubject.textContent = 'fetching payload...';
+
+  if (found) {
+    modalSubject.textContent = found.subject || '(no subject)';
+    modalFrom.textContent = `from: ${found.from}`;
+    modalTo.textContent = `to: ${found.to_email}`;
+    if (found.html) {
+      modalBody.innerHTML = found.html;
+    } else {
+      modalBody.innerHTML = `<pre style="white-space: pre-wrap; font-family: var(--font-mono);">${escapeHtml(found.body || found.intro || '')}</pre>`;
+    }
+    return;
+  }
+
+  modalSubject.textContent = 'Message inspection';
   modalFrom.textContent = '';
   modalTo.textContent = `to: ${toEmail}`;
-  modalBody.innerHTML = '<div class="loading-state">decrypting and rendering message...</div>';
-
-  try {
-    const res = await fetch(`/api/get-message-detail?message_id=${messageId}&to_email=${encodeURIComponent(toEmail)}`);
-    const data = await res.json();
-
-    if (data.success && data.message) {
-      const m = data.message;
-      modalSubject.textContent = m.subject || '(no subject)';
-      modalFrom.textContent = `from: ${m.from ? (m.from.name + ' <' + m.from.address + '>') : 'unknown'}`;
-      modalTo.textContent = `to: ${m.to}`;
-
-      if (m.html) {
-        modalBody.innerHTML = m.html;
-      } else {
-        modalBody.innerHTML = `<pre style="white-space: pre-wrap; font-family: var(--font-mono);">${escapeHtml(m.text || '')}</pre>`;
-      }
-    } else {
-      modalBody.textContent = 'failed to render payload stream.';
-    }
-  } catch (err) {
-    modalBody.textContent = 'error: ' + err.message;
-  }
+  modalBody.innerHTML = '<div class="loading-state">message not found</div>';
 }
 
 // ==========================================

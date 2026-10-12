@@ -1,7 +1,5 @@
 import { getSupabase } from './_supabase.js';
 
-const MAIL_TM_API = 'https://api.mail.tm';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -38,29 +36,32 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, messages: [] });
     }
 
+    // Har bir email tokeni bo'yicha xatlarni parallel olish
     const fetchPromises = emails.map(async (em) => {
       if (!em.token) return [];
       try {
-        const msgRes = await fetch(`${MAIL_TM_API}/messages`, {
+        const inboxRes = await fetch(`https://api.tempmail.lol/auth/${encodeURIComponent(em.token)}`, {
           headers: {
-            'Authorization': `Bearer ${em.token}`,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'User-Agent': 'TekinMail/1.0'
           }
         });
 
-        if (!msgRes.ok) return [];
-        const msgData = await msgRes.json();
-        const list = msgData['hydra:member'] || [];
+        if (!inboxRes.ok) return [];
+        const inboxData = await inboxRes.json();
+        const emailList = inboxData.email || [];
 
-        return list.map((m) => ({
-          id: m.id,
+        return emailList.map((m, idx) => ({
+          id: `${em.id}_${idx}_${Date.now()}`,
+          token: em.token,
           to_email: em.address,
-          from: m.from ? `${m.from.name || ''} <${m.from.address}>`.trim() : 'Unknown',
-          from_address: m.from?.address || '',
+          from: m.from || 'Unknown Sender',
+          from_address: m.from || '',
           subject: m.subject || '(no subject)',
-          intro: m.intro || '',
-          created_at: m.createdAt,
-          has_attachments: m.hasAttachments || false
+          intro: m.body ? m.body.substring(0, 120) : '',
+          body: m.body || '',
+          html: m.html || '',
+          created_at: m.date ? new Date(m.date).toISOString() : new Date().toISOString()
         }));
       } catch (e) {
         return [];
