@@ -1,15 +1,23 @@
-// TEKINMAIL // FRONTEND CLIENT SCRIPT
+// TEKINMAIL // FRONTEND CLIENT SCRIPT (WITH CLAUDE BYPASS)
 
-const COOLDOWN_DURATION_MS = 5 * 60 * 1000; // 5 minut
+const COOLDOWN_DURATION_MS = 5 * 60 * 1000;
 const STORAGE_KEY_ACCOUNT = 'tekinmail_account_key';
 const STORAGE_KEY_COOLDOWN = 'tekinmail_add5_cooldown_until';
 const STORAGE_KEY_THEME = 'tekinmail_theme';
+const STORAGE_KEY_BASE_EMAIL = 'tekinmail_base_email';
 
 // DOM ELEMENTLAR
 const themeToggle = document.getElementById('themeToggle');
 const accountPill = document.getElementById('accountPill');
 const accountKeyDisplay = document.getElementById('accountKeyDisplay');
 
+// TABS
+const tabTemp = document.getElementById('tabTemp');
+const tabBypass = document.getElementById('tabBypass');
+const sectionTemp = document.getElementById('sectionTemp');
+const sectionBypass = document.getElementById('sectionBypass');
+
+// TEMP INBOX ELEMENTS
 const btnAddFive = document.getElementById('btnAddFive');
 const btnIconPlus = document.getElementById('btnIconPlus');
 const btnIconLock = document.getElementById('btnIconLock');
@@ -25,6 +33,15 @@ const messagesList = document.getElementById('messagesList');
 const messagesCount = document.getElementById('messagesCount');
 const btnRefreshInbox = document.getElementById('btnRefreshInbox');
 
+// CLAUDE BYPASS ELEMENTS
+const baseEmailInput = document.getElementById('baseEmailInput');
+const btnGen100 = document.getElementById('btnGen100');
+const btnCopyAllBypass = document.getElementById('btnCopyAllBypass');
+const bypassSearch = document.getElementById('bypassSearch');
+const bypassList = document.getElementById('bypassList');
+const bypassCount = document.getElementById('bypassCount');
+
+// MODAL & TOAST
 const messageModal = document.getElementById('messageModal');
 const modalClose = document.getElementById('modalClose');
 const modalSubject = document.getElementById('modalSubject');
@@ -39,10 +56,110 @@ const toastText = document.getElementById('toastText');
 let currentAccountKey = null;
 let currentEmails = [];
 let currentMessages = [];
+let generatedBypassAliases = [];
 let cooldownInterval = null;
 
 // ==========================================
-// 1. THEME SWITCHER (DARK / LIGHT)
+// 1. TABS SWITCHER
+// ==========================================
+
+tabTemp.addEventListener('click', () => {
+  tabTemp.classList.add('active');
+  tabBypass.classList.remove('active');
+  sectionTemp.classList.remove('hidden');
+  sectionBypass.classList.add('hidden');
+});
+
+tabBypass.addEventListener('click', () => {
+  tabBypass.classList.add('active');
+  tabTemp.classList.remove('active');
+  sectionBypass.classList.remove('hidden');
+  sectionTemp.classList.add('hidden');
+
+  if (generatedBypassAliases.length === 0) {
+    generateClaudeAliases();
+  }
+});
+
+// ==========================================
+// 2. CLAUDE 100x ALIAS GENERATOR
+// ==========================================
+
+function generateClaudeAliases() {
+  const rawEmail = (baseEmailInput.value || '').trim().toLowerCase();
+
+  if (!rawEmail || !rawEmail.includes('@')) {
+    showToast('Iltimos, toʻgʻri email kiriting (masalan mrdevs2011@proton.me)');
+    return;
+  }
+
+  localStorage.setItem(STORAGE_KEY_BASE_EMAIL, rawEmail);
+
+  const [username, domain] = rawEmail.split('@');
+  const aliases = [];
+
+  // 1. Numerik taglar: +cl01 ... +cl50
+  for (let i = 1; i <= 50; i++) {
+    const num = String(i).padStart(2, '0');
+    aliases.push(`${username}+cl${num}@${domain}`);
+  }
+
+  // 2. Maxsus maqsadli taglar: +dev, +pro, +core, +lab va h.k.
+  const tags = [
+    'ai', 'core', 'dev', 'pro', 'lab', 'hub', 'box', 'run', 'net', 'sys',
+    'app', 'bot', 'code', 'fast', 'work', 'test', 'team', 'auth', 'flow', 'task',
+    'alpha', 'beta', 'deep', 'live', 'sync', 'desk', 'node', 'link', 'zone', 'meta',
+    'prime', 'agent', 'smart', 'cloud', 'quick', 'shift', 'pulse', 'spark', 'nexus', 'byte',
+    'intel', 'logic', 'micro', 'macro', 'turbo', 'space', 'craft', 'pixel', 'stack', 'ultra'
+  ];
+
+  tags.forEach(t => {
+    aliases.push(`${username}+${t}@${domain}`);
+  });
+
+  generatedBypassAliases = aliases;
+  renderBypassAliases();
+  showToast(`✅ ${aliases.length} ta Claude uchun yangi alias yaratildi!`);
+}
+
+function renderBypassAliases() {
+  const query = (bypassSearch.value || '').trim().toLowerCase();
+  const filtered = generatedBypassAliases.filter(a => a.toLowerCase().includes(query));
+
+  bypassCount.textContent = `${filtered.length} ta alias`;
+
+  if (filtered.length === 0) {
+    bypassList.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><p>Hech narsa topilmadi</p></div>`;
+    return;
+  }
+
+  bypassList.innerHTML = filtered.map((item, idx) => `
+    <div class="bypass-item">
+      <span class="alias-text" title="${escapeHtml(item)}">${escapeHtml(item)}</span>
+      <button class="btn-alias-copy" onclick="copyAddress('${item}', this)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+        </svg>
+        <span>copy</span>
+      </button>
+    </div>
+  `).join('');
+}
+
+btnGen100.addEventListener('click', generateClaudeAliases);
+bypassSearch.addEventListener('input', renderBypassAliases);
+
+btnCopyAllBypass.addEventListener('click', () => {
+  if (generatedBypassAliases.length === 0) return;
+  const allText = generatedBypassAliases.join('\n');
+  navigator.clipboard.writeText(allText).then(() => {
+    showToast(`Barcha ${generatedBypassAliases.length} ta alias nusxalandi!`);
+  });
+});
+
+// ==========================================
+// 3. THEME TOGGLE
 // ==========================================
 
 function initTheme() {
@@ -60,7 +177,7 @@ function toggleTheme() {
 themeToggle.addEventListener('click', toggleTheme);
 
 // ==========================================
-// 2. COOLDOWN TAYMER (5 MINUT, LOCALSTORAGE)
+// 4. COOLDOWN TAYMER
 // ==========================================
 
 function checkAndStartCooldown() {
@@ -123,7 +240,7 @@ function unlockButton() {
 }
 
 // ==========================================
-// 3. ACCOUNT INITIALIZATION
+// 5. TEMP INBOX INIT & ALLOCATION
 // ==========================================
 
 async function initAccount() {
@@ -142,17 +259,11 @@ async function initAccount() {
       currentEmails = data.emails || [];
       renderEmails();
       fetchMessages();
-    } else {
-      showToast('init error: ' + data.error);
     }
   } catch (err) {
-    showToast('network error: api unreachable');
+    console.warn('Init fetch failed:', err);
   }
 }
-
-// ==========================================
-// 4. ADD 5 EMAILS
-// ==========================================
 
 async function handleAddFive() {
   if (btnAddFive.disabled) return;
@@ -180,8 +291,7 @@ async function handleAddFive() {
       showToast(`+${data.added_count} addresses allocated`);
       startFiveMinuteCooldown();
     } else {
-      const errMsg = data.error || (data.details ? data.details.join(', ') : 'unknown');
-      showToast('allocation failed: ' + errMsg);
+      showToast('allocation failed: ' + (data.error || 'unknown'));
       unlockButton();
     }
   } catch (err) {
@@ -189,10 +299,6 @@ async function handleAddFive() {
     unlockButton();
   }
 }
-
-// ==========================================
-// 5. RENDER EMAILS
-// ==========================================
 
 function renderEmails() {
   const query = emailSearch.value.trim().toLowerCase();
@@ -229,7 +335,7 @@ function renderEmails() {
 }
 
 // ==========================================
-// 6. RENDER MESSAGES & INBOX
+// 6. MESSAGES
 // ==========================================
 
 async function fetchMessages() {
@@ -280,7 +386,6 @@ function renderMessages() {
   `).join('');
 }
 
-// INSPECTION MODAL
 function openMessageDetail(messageId, toEmail) {
   const found = currentMessages.find(m => m.id === messageId);
   messageModal.classList.remove('hidden');
@@ -294,17 +399,11 @@ function openMessageDetail(messageId, toEmail) {
     } else {
       modalBody.innerHTML = `<pre style="white-space: pre-wrap; font-family: var(--font-mono);">${escapeHtml(found.body || found.intro || '')}</pre>`;
     }
-    return;
   }
-
-  modalSubject.textContent = 'Message inspection';
-  modalFrom.textContent = '';
-  modalTo.textContent = `to: ${toEmail}`;
-  modalBody.innerHTML = '<div class="loading-state">message not found</div>';
 }
 
 // ==========================================
-// UTILITIES
+// UTILS
 // ==========================================
 
 function copyAddress(address, btn) {
@@ -343,7 +442,7 @@ function formatTime(iso) {
 accountPill.addEventListener('click', () => {
   if (currentAccountKey) {
     navigator.clipboard.writeText(currentAccountKey);
-    showToast('account key copied to clipboard');
+    showToast('account key copied');
   }
 });
 
@@ -356,8 +455,15 @@ messageModal.addEventListener('click', (e) => {
   if (e.target === messageModal) messageModal.classList.add('hidden');
 });
 
-// BOOTSTRAP
+// START
 initTheme();
 checkAndStartCooldown();
 initAccount();
+
+// Saved emailni tiklash
+const savedBaseEmail = localStorage.getItem(STORAGE_KEY_BASE_EMAIL);
+if (savedBaseEmail) {
+  baseEmailInput.value = savedBaseEmail;
+}
+
 setInterval(fetchMessages, 10000);

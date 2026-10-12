@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tekinmail // disposable inbox for developers</title>
+  <title>tekinmail // disposable & ai bypass inbox</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <div class="shell">
-    <!-- Navbar / Header -->
+    <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-brand">
         <svg class="brand-logo" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -20,6 +20,23 @@
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
         </svg>
         <span class="brand-title">tekinmail<span class="brand-cursor">_</span></span>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="nav-tabs">
+        <button id="tabTemp" class="tab-btn active">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          <span>temp inbox</span>
+        </button>
+        <button id="tabBypass" class="tab-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+          </svg>
+          <span>claude bypass (100x)</span>
+        </button>
       </div>
 
       <div class="topbar-actions">
@@ -31,20 +48,14 @@
           </svg>
           <span class="account-label">key:</span>
           <code id="accountKeyDisplay">loading...</code>
-          <svg class="copy-hint-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-          </svg>
         </div>
 
-        <!-- Theme Toggle (Dark / Light) -->
-        <button id="themeToggle" class="btn-icon" aria-label="Toggle theme" title="Toggle theme">
-          <!-- Sun (Light icon) -->
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="btn-icon" aria-label="Toggle theme">
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="4"/>
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
           </svg>
-          <!-- Moon (Dark icon) -->
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
           </svg>
@@ -52,8 +63,8 @@
       </div>
     </header>
 
-    <!-- Main Workspace -->
-    <main class="grid-layout">
+    <!-- SECTION 1: TEMP INBOX (ORIGINAL) -->
+    <main id="sectionTemp" class="grid-layout">
       <!-- Left Column: Generated Emails -->
       <section class="card-column emails-card">
         <div class="column-header">
@@ -65,12 +76,11 @@
                 <line x1="19" x2="19" y1="8" y2="14"/>
                 <line x1="22" x2="16" y1="11" y2="11"/>
               </svg>
-              <h2>aliases</h2>
+              <h2>temp aliases</h2>
             </div>
             <span class="badge" id="emailsCount">0</span>
           </div>
 
-          <!-- Add 5 Emails Button (with SVG lock/plus) -->
           <button id="btnAddFive" class="btn btn-action">
             <svg id="btnIconPlus" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12h14M12 5v14"/>
@@ -83,7 +93,6 @@
           </button>
         </div>
 
-        <!-- Lock Warning Bar -->
         <div id="cooldownBanner" class="lock-indicator hidden">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -92,23 +101,21 @@
           <span>cooldown active: <strong id="cooldownTimerDisplay">05:00</strong></span>
         </div>
 
-        <!-- Filter / Search -->
         <div class="filter-box">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/>
             <path d="m21 21-4.3-4.3"/>
           </svg>
-          <input type="text" id="emailSearch" placeholder="filter by prefix or domain..." spellcheck="false" autocomplete="off">
+          <input type="text" id="emailSearch" placeholder="filter by prefix..." spellcheck="false" autocomplete="off">
         </div>
 
-        <!-- Emails View List -->
         <div class="scroll-stack" id="emailsList">
           <div class="empty-state">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             <p>no addresses yet</p>
-            <span class="dimmed">click <code>add 5</code> to allocate initial 5 addresses</span>
+            <span class="dimmed">click <code>add 5</code> to allocate addresses</span>
           </div>
         </div>
       </section>
@@ -138,7 +145,6 @@
           </button>
         </div>
 
-        <!-- Messages View List -->
         <div class="scroll-stack" id="messagesList">
           <div class="empty-state">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -146,13 +152,65 @@
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
             </svg>
             <p>inbox empty</p>
-            <span class="dimmed">verification emails & tokens will arrive here instantly</span>
+            <span class="dimmed">verification emails will appear here</span>
           </div>
         </div>
       </section>
     </main>
 
-    <!-- Inspection Modal (Message Detail Viewer) -->
+    <!-- SECTION 2: CLAUDE BYPASS GENERATOR (PROTON / GMAIL 100x ALIASES) -->
+    <main id="sectionBypass" class="grid-layout hidden">
+      <section class="card-column full-width">
+        <div class="bypass-header">
+          <div>
+            <h2>Claude & AI Unlimited Alias Generator</h2>
+            <p class="bypass-desc">Proton yoki Gmail pochtangizni kiriting. Claude uchun <strong>100 ta alohida hisob ochishga yaroqli toza alias</strong> generatsiya qilinadi. Barcha xatlar va kodlar to'g'ridan-to'g'ri o'z pochtangizga keladi!</p>
+          </div>
+        </div>
+
+        <!-- Input control box -->
+        <div class="bypass-controls">
+          <div class="input-group">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <input type="email" id="baseEmailInput" placeholder="Masalan: mrdevs2011@proton.me yoki siz@gmail.com" value="mrdevs2011@proton.me">
+          </div>
+
+          <div class="bypass-btns">
+            <button id="btnGen100" class="btn btn-action">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>100 ta Claude Alias Generatsiya Qilish</span>
+            </button>
+            <button id="btnCopyAllBypass" class="btn btn-ghost" title="Hammasini birdan nusxalash">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+              <span>Barchasini nusxalash (txt)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="filter-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" id="bypassSearch" placeholder="Aliaslar ichidan qidirish...">
+          <span class="badge" id="bypassCount">0 ta alias</span>
+        </div>
+
+        <!-- Generated Aliases Grid -->
+        <div class="bypass-grid" id="bypassList"></div>
+      </section>
+    </main>
+
+    <!-- Inspection Modal -->
     <div id="messageModal" class="modal-backdrop hidden">
       <div class="modal-window">
         <div class="modal-head">
@@ -169,9 +227,7 @@
             </svg>
           </button>
         </div>
-        <div class="modal-content" id="modalBody">
-          <div class="loading-state">loading message stream...</div>
-        </div>
+        <div class="modal-content" id="modalBody"></div>
       </div>
     </div>
 
