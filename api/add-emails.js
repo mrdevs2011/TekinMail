@@ -36,24 +36,31 @@ export default async function handler(req, res) {
       }
     }
 
-    const account_key = body?.account_key;
+    let account_key = body?.account_key || req.query?.account_key;
+    let account = null;
 
-    if (!account_key) {
-      return res.status(400).json({ success: false, error: 'account_key is required in request body' });
+    if (account_key) {
+      const { data: existingAccount } = await supabase
+        .from('accounts')
+        .select('id, account_key')
+        .eq('account_key', account_key)
+        .single();
+      account = existingAccount;
     }
 
-    // 1. Account tekshirish
-    const { data: account, error: accErr } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('account_key', account_key)
-      .single();
+    // Agar hisob topilmasa yoki berilmagan bo'lsa, o'zimiz yaratamiz
+    if (!account) {
+      account_key = 'tm_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+      const { data: newAcc, error: createErr } = await supabase
+        .from('accounts')
+        .insert([{ account_key }])
+        .select('id, account_key')
+        .single();
 
-    if (accErr || !account) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `Account not found: ${accErr?.message || ''}` 
-      });
+      if (createErr || !newAcc) {
+        return res.status(500).json({ success: false, error: 'Failed to provision account: ' + (createErr?.message || '') });
+      }
+      account = newAcc;
     }
 
     // 2. Domen olish (Failover / Fallback bilan)
@@ -151,6 +158,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      account_key: account.account_key,
       added_count: createdEmails.length,
       emails: createdEmails,
       domain_used: targetDomain

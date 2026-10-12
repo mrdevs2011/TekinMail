@@ -170,6 +170,11 @@ async function handleAddFive() {
     const data = await res.json();
 
     if (data.success && data.emails) {
+      if (data.account_key) {
+        currentAccountKey = data.account_key;
+        localStorage.setItem(STORAGE_KEY_ACCOUNT, currentAccountKey);
+        accountKeyDisplay.textContent = currentAccountKey;
+      }
       currentEmails = [...data.emails, ...currentEmails];
       renderEmails();
       showToast(`+${data.added_count} addresses allocated`);
