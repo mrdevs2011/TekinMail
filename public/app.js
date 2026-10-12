@@ -5,6 +5,7 @@ const STORAGE_KEY_COOLDOWN = 'tekinmail_cooldown_until';
 const STORAGE_KEY_ACCOUNT = 'tekinmail_account_key';
 const STORAGE_KEY_THEME = 'tekinmail_theme';
 const STORAGE_KEY_AUTH = 'tekinmail_auth_session';
+const STORAGE_KEY_HIDDEN = 'tekinmail_hidden_emails';
 
 // DOM AUTH
 const loginCard = document.getElementById('loginCard');
@@ -253,14 +254,36 @@ btnAddFive.addEventListener('click', async () => {
 });
 
 // ==========================================
-// 6. RENDER & COPY
+// 6. RENDER & COPY & HIDE
 // ==========================================
+
+function getHiddenEmails() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_HIDDEN) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function hideEmail(address) {
+  const hidden = getHiddenEmails();
+  if (!hidden.includes(address)) {
+    hidden.push(address);
+    localStorage.setItem(STORAGE_KEY_HIDDEN, JSON.stringify(hidden));
+  }
+  render();
+  showToast('yashirildi: ' + address);
+}
 
 function render() {
   const q = (emailSearch.value || '').trim().toLowerCase();
-  const list = currentEmails.filter(e => e.address.toLowerCase().includes(q));
+  const hidden = getHiddenEmails();
 
-  emailsCount.textContent = currentEmails.length.toString();
+  // Yashirilgan emaillarni filtrlaymiz
+  const visible = currentEmails.filter(e => !hidden.includes(e.address));
+  const list = visible.filter(e => e.address.toLowerCase().includes(q));
+
+  emailsCount.textContent = visible.length.toString();
 
   if (list.length === 0) {
     emailsList.innerHTML = `
@@ -275,7 +298,10 @@ function render() {
   emailsList.innerHTML = list.map(item => `
     <div class="row">
       <span title="${item.address}">${item.address}</span>
-      <button class="btn-copy" onclick="copy('${item.address}', this)">copy</button>
+      <div class="row-actions">
+        <button class="btn-copy" onclick="copy('${item.address}', this)">copy</button>
+        <button class="btn-del" onclick="hideEmail('${item.address}')" title="Yashirish">del</button>
+      </div>
     </div>
   `).join('');
 }

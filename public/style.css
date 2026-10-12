@@ -296,10 +296,16 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100% - 60px);
+  max-width: calc(100% - 105px);
 }
 
-.btn-copy {
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-copy, .btn-del {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--muted);
@@ -308,10 +314,16 @@ body {
   padding: 3px 8px;
   border-radius: 4px;
   cursor: pointer;
+  transition: var(--transition);
 }
 
 .btn-copy:hover { color: var(--text); border-color: var(--border-focus); }
 .btn-copy.copied { color: #10b981; border-color: #10b981; }
+
+.btn-del:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
 
 .empty {
   text-align: center;
