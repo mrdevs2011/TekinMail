@@ -1,4 +1,4 @@
-/* TEKINMAIL // ULTRA MINIMALIST */
+/* TEKINMAIL // ULTRA MINIMALIST WITH 2-STEP LOGIN */
 
 :root {
   --font-sans: 'Inter', -apple-system, sans-serif;
@@ -54,7 +54,7 @@ body {
 
 .shell {
   width: 100%;
-  max-width: 580px;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -113,13 +113,66 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
+/* LOGIN FORM STYLES */
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 10px 0;
+}
+
+.login-header svg {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.login-header h2 {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login-header p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-form input {
+  background: var(--element);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+}
+
+.login-form input:focus {
+  border-color: var(--border-focus);
+}
+
+.full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ACTION BAR */
 .action-bar {
   display: flex;
   justify-content: space-between;
@@ -156,7 +209,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 8px 14px;
   border-radius: var(--radius);
   border: 1px solid transparent;
   cursor: pointer;
@@ -173,7 +226,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* LOCKED 5 MIN COOLDOWN */
 .btn-action:disabled {
   background: var(--btn-disabled-bg) !important;
   color: var(--btn-disabled-text) !important;
@@ -182,7 +234,6 @@ body {
   transform: none !important;
 }
 
-/* COOLDOWN BOX */
 .cooldown-box {
   display: flex;
   align-items: center;
@@ -198,7 +249,6 @@ body {
 
 .cooldown-box strong { color: #ef4444; }
 
-/* SEARCH */
 .search-box {
   display: flex;
   align-items: center;
@@ -206,7 +256,7 @@ body {
   background: var(--element);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 6px 10px;
+  padding: 8px 10px;
 }
 
 .search-box input {
@@ -219,14 +269,12 @@ body {
   outline: none;
 }
 
-/* LIST */
 .list {
   display: flex;
   flex-direction: column;
   gap: 6px;
   max-height: 480px;
   overflow-y: auto;
-  padding-right: 2px;
 }
 
 .row {
@@ -237,7 +285,6 @@ body {
   border: 1px solid var(--border);
   padding: 8px 12px;
   border-radius: var(--radius);
-  transition: var(--transition);
 }
 
 .row:hover { border-color: var(--border-focus); }
@@ -278,7 +325,6 @@ body {
 .empty p { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .empty code { color: var(--accent); font-family: var(--font-mono); }
 
-/* TOAST */
 .toast {
   position: fixed;
   bottom: 20px;

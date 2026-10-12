@@ -1,11 +1,22 @@
-// TEKINMAIL // ULTRA LIGHTWEIGHT SCRIPT
+// TEKINMAIL // ULTRA LIGHTWEIGHT SCRIPT WITH 2-STEP AUTH
 
 const COOLDOWN_DURATION_MS = 5 * 60 * 1000;
 const STORAGE_KEY_COOLDOWN = 'tekinmail_cooldown_until';
 const STORAGE_KEY_ACCOUNT = 'tekinmail_account_key';
 const STORAGE_KEY_THEME = 'tekinmail_theme';
+const STORAGE_KEY_AUTH = 'tekinmail_auth_session';
 
-// DOM
+// DOM AUTH
+const loginCard = document.getElementById('loginCard');
+const appCard = document.getElementById('appCard');
+const loginTitle = document.getElementById('loginTitle');
+const loginSubtitle = document.getElementById('loginSubtitle');
+const formPass1 = document.getElementById('formPass1');
+const inputPass1 = document.getElementById('inputPass1');
+const formPass2 = document.getElementById('formPass2');
+const inputPass2 = document.getElementById('inputPass2');
+
+// DOM APP
 const themeToggle = document.getElementById('themeToggle');
 const btnAddFive = document.getElementById('btnAddFive');
 const btnIconPlus = document.getElementById('btnIconPlus');
@@ -23,8 +34,95 @@ const toastText = document.getElementById('toastText');
 let currentAccountKey = null;
 let currentEmails = [];
 let cooldownInterval = null;
+let tempPass1 = '';
 
-// THEME
+// ==========================================
+// 1. TWO-STEP LOGIN CONTROLLER
+// ==========================================
+
+function checkSession() {
+  const session = localStorage.getItem(STORAGE_KEY_AUTH);
+  if (session) {
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  loginCard.classList.remove('hidden');
+  appCard.classList.add('hidden');
+  formPass1.classList.remove('hidden');
+  formPass2.classList.add('hidden');
+  inputPass1.focus();
+}
+
+function showApp() {
+  loginCard.classList.add('hidden');
+  appCard.classList.remove('hidden');
+  checkCooldown();
+  initApp();
+}
+
+// STEP 1 SUBMIT
+formPass1.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const p1 = inputPass1.value.trim();
+  if (!p1) return;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: 1, pass1: p1 })
+    });
+    const data = await res.json();
+
+    if (data.success && data.next_step === 2) {
+      tempPass1 = p1;
+      formPass1.classList.add('hidden');
+      formPass2.classList.remove('hidden');
+      loginTitle.textContent = 'security verification';
+      loginSubtitle.textContent = '2-bosqichli maxfiy kalitni kiriting';
+      inputPass2.focus();
+    } else {
+      showToast(data.error || '1-parol xato');
+    }
+  } catch (err) {
+    showToast('Xatolik: Baza bilan bogʻlanib boʻlmadi');
+  }
+});
+
+// STEP 2 SUBMIT
+formPass2.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const p2 = inputPass2.value.trim();
+  if (!p2) return;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: 2, pass1: tempPass1, pass2: p2 })
+    });
+    const data = await res.json();
+
+    if (data.success && data.token) {
+      localStorage.setItem(STORAGE_KEY_AUTH, data.token);
+      showToast('Xush kelibsiz!');
+      showApp();
+    } else {
+      showToast(data.error || '2-parol xato');
+    }
+  } catch (err) {
+    showToast('Xatolik: Baza bilan bogʻlanib boʻlmadi');
+  }
+});
+
+// ==========================================
+// 2. THEME CONTROLLER
+// ==========================================
+
 function initTheme() {
   const theme = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
@@ -37,7 +135,10 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem(STORAGE_KEY_THEME, next);
 });
 
-// COOLDOWN
+// ==========================================
+// 3. COOLDOWN TAYMER (5 MIN, LOCALSTORAGE)
+// ==========================================
+
 function checkCooldown() {
   const until = localStorage.getItem(STORAGE_KEY_COOLDOWN);
   if (!until) return;
@@ -87,8 +188,11 @@ function unlockButton() {
   cooldownBanner.classList.add('hidden');
 }
 
-// INIT
-async function init() {
+// ==========================================
+// 4. APP INITIALIZATION & EMAIL FETCH
+// ==========================================
+
+async function initApp() {
   currentAccountKey = localStorage.getItem(STORAGE_KEY_ACCOUNT);
 
   try {
@@ -107,7 +211,10 @@ async function init() {
   }
 }
 
-// ADD 5
+// ==========================================
+// 5. ADD 5 EMAILS
+// ==========================================
+
 btnAddFive.addEventListener('click', async () => {
   if (btnAddFive.disabled) return;
 
@@ -145,7 +252,10 @@ btnAddFive.addEventListener('click', async () => {
   }
 });
 
-// RENDER
+// ==========================================
+// 6. RENDER & COPY
+// ==========================================
+
 function render() {
   const q = (emailSearch.value || '').trim().toLowerCase();
   const list = currentEmails.filter(e => e.address.toLowerCase().includes(q));
@@ -194,5 +304,4 @@ function showToast(txt) {
 
 // START
 initTheme();
-checkCooldown();
-init();
+checkSession();

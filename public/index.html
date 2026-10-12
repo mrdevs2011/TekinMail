@@ -35,9 +35,32 @@
       </div>
     </header>
 
-    <!-- Main Card -->
-    <main class="card">
-      <!-- Action Bar -->
+    <!-- 1. LOGIN CARD (2-BOSQICHLI) -->
+    <main id="loginCard" class="card">
+      <div class="login-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <h2 id="loginTitle">admin authentication</h2>
+        <p id="loginSubtitle">kirish uchun 1-parolni kiriting</p>
+      </div>
+
+      <!-- Step 1: Pass 1 -->
+      <form id="formPass1" class="login-form">
+        <input type="password" id="inputPass1" placeholder="enter password 1..." autocomplete="current-password" required autofocus>
+        <button type="submit" class="btn btn-action full-width">continue</button>
+      </form>
+
+      <!-- Step 2: Pass 2 (Yashirin turadi) -->
+      <form id="formPass2" class="login-form hidden">
+        <input type="password" id="inputPass2" placeholder="enter password 2 (security key)..." autocomplete="current-password" required>
+        <button type="submit" class="btn btn-action full-width">verify & access</button>
+      </form>
+    </main>
+
+    <!-- 2. ASOSIY BOSHQARUV KARTASI (LOGIN BO'LGACH OCHILADI) -->
+    <main id="appCard" class="card hidden">
       <div class="action-bar">
         <div class="meta">
           <h2>aliases</h2>
