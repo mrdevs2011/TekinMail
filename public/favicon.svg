@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#000000"/>
-  <rect x="4" y="6" width="24" height="19" rx="3" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M4 8.5L16 16.5L28 8.5" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="23" cy="21" r="3" fill="#38BDF8"/>
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fon uchun yoqimli sky-blue doira -->
+  <circle cx="12" cy="12" r="12" fill="#38BDF8"/>
+  
+  <!-- Oq rangdagi @ ikonkasi -->
+  <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+        stroke="#FFFFFF" 
+        stroke-width="1.8" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
 </svg>
