@@ -2,11 +2,13 @@ import { getSupabase } from './_supabase.js';
 import { usernameToEmail } from './_auth.js';
 import { writeAudit, getClientIp } from './_audit.js';
 import { setCors, handleOptions } from './_cors.js';
+import { setSecurityHeaders } from './_utils.js';
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MINUTES = 15;
 
 export default async function handler(req, res) {
+  setSecurityHeaders(res);
   setCors(req, res, 'POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {

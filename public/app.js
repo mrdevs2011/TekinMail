@@ -105,23 +105,36 @@ let activeDomain = '';
 
 // Public config (MAIL_DOMAIN from server)
 async function loadPublicConfig() {
+  // Public sahifada domen ko'rsatilmaydi — faqat login qilingan workspace da
   try {
     const res = await fetch('/api/config');
     const data = await res.json();
     if (data.success && data.domain) {
       activeDomain = data.domain;
-      document.querySelectorAll('[data-mail-domain]').forEach(el => {
-        const prefix = el.getAttribute('data-mail-prefix') || '';
-        const fmt = el.getAttribute('data-mail-format') || 'at';
-        if (fmt === 'at') el.textContent = prefix ? prefix + '@' + activeDomain : '@' + activeDomain;
-        else if (fmt === 'email') el.textContent = (prefix || 'user') + '@' + activeDomain;
-        else el.textContent = activeDomain;
-      });
-      if (domainSuffixLabel) domainSuffixLabel.textContent = '@' + activeDomain;
     }
   } catch (e) {
     console.warn('config load failed', e);
   }
+}
+
+function applyDomainToWorkspace() {
+  if (!activeDomain) return;
+  if (domainSuffixLabel) domainSuffixLabel.textContent = '@' + activeDomain;
+  // Faqat login keyin: workspace + modal lar (public landing ga tegmaydi)
+  const roots = [
+    document.getElementById('mainWorkspace'),
+    document.getElementById('deleteConfirmModal'),
+    document.getElementById('addEmailModal')
+  ].filter(Boolean);
+  roots.forEach(root => {
+    root.querySelectorAll('[data-mail-domain]').forEach(el => {
+      const prefix = el.getAttribute('data-mail-prefix') || '';
+      const fmt = el.getAttribute('data-mail-format') || 'at';
+      if (fmt === 'at') el.textContent = prefix ? prefix + '@' + activeDomain : '@' + activeDomain;
+      else if (fmt === 'email') el.textContent = (prefix || 'user') + '@' + activeDomain;
+      else el.textContent = activeDomain;
+    });
+  });
 }
 
 let syncInterval = null;
@@ -273,6 +286,7 @@ function showAuth() {
 }
 
 function showWorkspace() {
+  applyDomainToWorkspace();
   document.body.classList.add('workspace-active');
   authScreen.classList.add('hidden');
   mainWorkspace.classList.remove('hidden');
@@ -430,9 +444,7 @@ async function loadEmails() {
     if (data.success) {
       currentEmails = data.emails || [];
       activeDomain = (data.domain || '').trim().toLowerCase();
-      if (domainSuffixLabel) {
-        domainSuffixLabel.textContent = '@' + activeDomain;
-      }
+      applyDomainToWorkspace();
       renderEmails();
       renderInboxTabs();
       loadMessages();
@@ -532,15 +544,15 @@ function renderEmails() {
   emailsListContainer.innerHTML = filtered.map(item => {
     const isSelected = activeFilter === item.address;
     return `
-      <div class="email-card ${isSelected ? 'selected' : ''}" onclick="selectEmailTab('${item.address}')">
+      <div class="email-card ${isSelected ? 'selected' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')">
         <div class="email-avatar">${initial}</div>
         <div class="email-info">
           <div class="email-address-text" title="${escapeHtml(item.address)}">${escapeHtml(item.address)}</div>
           <div class="email-owner-text">${escapeHtml(ownerName)}</div>
         </div>
         <div class="email-card-actions">
-          <button class="btn-card-copy" onclick="copyToClipboard('${item.address}', event)" title="Nusxalash">copy</button>
-          <button class="btn-card-del" onclick="openDeleteModal('${escapeHtml(item.address)}', event)" title="Oʻchirib tashlash">&times;</button>
+          <button class="btn-card-copy" onclick="copyToClipboard('${escapeAttr(item.address)}', event)" title="Nusxalash">copy</button>
+          <button class="btn-card-del" onclick="openDeleteModal('${escapeAttr(item.address)}', event)" title="Oʻchirib tashlash">&times;</button>
         </div>
       </div>
     `;
@@ -567,7 +579,7 @@ function renderInboxTabs() {
       : item.address;
 
     html += `
-      <button class="filter-tab ${isActive ? 'active' : ''}" onclick="selectEmailTab('${item.address}')" title="${escapeHtml(item.address)}">
+      <button class="filter-tab ${isActive ? 'active' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')" title="${escapeHtml(item.address)}">
         ${escapeHtml(shortLabel)}
       </button>
     `;
@@ -686,8 +698,12 @@ function renderMessages() {
 }
 
 // MESSAGE MODAL VIEW (1:1 RICH EMAIL WITH BEAUTIFUL HTML PREVIEW)
-window.openMessageModal = function(msgId) {
-  const msg = currentMessages.find(m => m.id === msgId);
+window.openMessageModal = function(msgIdOrObj) {
+  const msg = (msgIdOrObj && typeof msgIdOrObj === "object")
+    ? msgIdOrObj
+    : (currentMessages.find(m => m.id === msgIdOrObj)
+      || (typeof adminInspectData !== "undefined" && adminInspectData.messages
+          ? adminInspectData.messages.find(m => m.id === msgIdOrObj) : null));
   if (!msg) return;
 
   msgDetailSubject.textContent = msg.subject || 'Mavzusiz';
@@ -723,6 +739,8 @@ window.openMessageModal = function(msgId) {
     const iframe = document.createElement('iframe');
     iframe.className = 'msg-email-frame';
     // Sandbox olib tashlandi - rasmlar to'liq va erkin yuklanadi
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.srcdoc = decodedHtml;
 
     iframe.onload = () => {
@@ -789,9 +807,19 @@ function showToast(text) {
 }
 
 function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/`/g, '&#96;');
+}
+
 
 function formatTime(iso) {
   if (!iso) return '12:45';
@@ -1148,3 +1176,11 @@ window.adminViewMessage = function(msgId) {
 
 // BOOTSTRAP
 loadPublicConfig().finally(() => checkSession());
+
+// Global Escape closes open modals
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (msgDetailModal && !msgDetailModal.classList.contains('hidden')) msgDetailModal.classList.add('hidden');
+  if (addEmailModal && !addEmailModal.classList.contains('hidden')) addEmailModal.classList.add('hidden');
+  if (deleteConfirmModal && !deleteConfirmModal.classList.contains('hidden')) closeDeleteModal();
+});

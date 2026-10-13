@@ -1,27 +1,20 @@
 import { getSupabase } from './_supabase.js';
-import { verifySessionToken } from './_auth.js';
 import { setCors, handleOptions } from './_cors.js';
+import { verifySessionToken } from './_auth.js';
+import { getBearerToken, setSecurityHeaders, jsonError, jsonOk } from './_utils.js';
 
 export default async function handler(req, res) {
   setCors(req, res, 'GET, OPTIONS');
+  setSecurityHeaders(res);
 
-  if (req.method === 'OPTIONS') {
-    return handleOptions(req, res, 'GET, OPTIONS');
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return handleOptions(req, res, 'GET, OPTIONS');
+  if (req.method !== 'GET') return jsonError(res, 405, 'Method not allowed');
 
   try {
     const supabase = getSupabase();
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '') || req.query?.token;
-
+    const token = getBearerToken(req);
     const session = await verifySessionToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: 'Avtorizatsiyadan o\u02bbtmagan' });
-    }
+    if (!session) return jsonError(res, 401, 'Avtorizatsiyadan o\u02bbtmagan');
 
     const emailFilter = (req.query?.email || '').trim().toLowerCase();
 
@@ -32,22 +25,16 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false });
 
     if (emailFilter && emailFilter !== 'all') {
+      if (emailFilter.length > 254) return jsonError(res, 400, 'Noto\u02bbg\u02bbri filtr');
       query = query.eq('email_address', emailFilter);
     }
 
     const { data: messages, error } = await query.limit(100);
+    if (error) return jsonError(res, 500, error.message);
 
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-
-    return res.status(200).json({
-      success: true,
-      messages: messages || []
-    });
-
+    return jsonOk(res, { messages: messages || [] });
   } catch (err) {
     console.error('[get-messages]', err.message);
-    return res.status(500).json({ success: false, error: err.message || 'Server xatoligi' });
+    return jsonError(res, 500, err.message || 'Server xatoligi');
   }
 }

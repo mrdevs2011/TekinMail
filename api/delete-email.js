@@ -1,62 +1,48 @@
 import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
 import { verifySessionToken } from './_auth.js';
+import { parseBody, getBearerToken, setSecurityHeaders, jsonError, jsonOk } from './_utils.js';
 
 export default async function handler(req, res) {
-  setCors(req, res);
+  setCors(req, res, 'POST, OPTIONS');
+  setSecurityHeaders(res);
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return handleOptions(req, res, 'POST, OPTIONS');
+  if (req.method !== 'POST') return jsonError(res, 405, 'Method not allowed');
 
   try {
     const supabase = getSupabase();
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) { body = {}; }
-    }
-
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '') || body?.token;
-
+    const body = parseBody(req);
+    const token = getBearerToken(req, body);
     const session = await verifySessionToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
-    }
+    if (!session) return jsonError(res, 401, 'Avtorizatsiyadan o\u02bbtmagan');
 
     const address = (body?.address || '').trim().toLowerCase();
-    if (!address) {
-      return res.status(400).json({ success: false, error: 'Email manzili koʻrsatilmadi' });
+    if (!address || !address.includes('@') || address.length > 254) {
+      return jsonError(res, 400, 'Email manzili ko\u02bbrsatilmadi');
     }
 
-    // 1. O'chirilayotgan emailga kelgan xatlarni tozalash
     await supabase
       .from('messages')
       .delete()
       .eq('user_id', session.userId)
       .eq('email_address', address);
 
-    // 2. Emailning o'zini bazadan butunlay o'chirish
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from('emails')
       .delete()
       .eq('user_id', session.userId)
-      .eq('address', address);
+      .eq('address', address)
+      .select('id');
 
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
+    if (error) return jsonError(res, 500, error.message);
+    if (!deleted || deleted.length === 0) {
+      return jsonError(res, 404, 'Email topilmadi');
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Email butunlay oʻchirildi',
-      address
-    });
+    return jsonOk(res, { message: 'Email butunlay o\u02bbchirildi', address });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    console.error('[delete-email]', err.message);
+    return jsonError(res, 500, err.message || 'Server xatoligi');
   }
 }

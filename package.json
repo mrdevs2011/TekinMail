@@ -1,9 +1,12 @@
 {
   "name": "tekinmail",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
-  "description": "TekinMail root email hub with multi-user authentication",
+  "description": "TekinMail — multi-user disposable email hub (production)",
   "main": "api/login.js",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   }

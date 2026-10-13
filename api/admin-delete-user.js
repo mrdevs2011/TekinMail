@@ -2,38 +2,31 @@ import { getSupabase } from './_supabase.js';
 import { requireAdmin } from './_auth.js';
 import { writeAudit, getClientIp } from './_audit.js';
 import { setCors, handleOptions } from './_cors.js';
+import { parseBody, isValidUuid, setSecurityHeaders, jsonError, jsonOk } from './_utils.js';
 
 export default async function handler(req, res) {
   setCors(req, res, 'POST, OPTIONS');
+  setSecurityHeaders(res);
 
-  if (req.method === 'OPTIONS') {
-    return handleOptions(req, res, 'POST, OPTIONS');
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return handleOptions(req, res, 'POST, OPTIONS');
+  if (req.method !== 'POST') return jsonError(res, 405, 'Method not allowed');
 
   try {
     const supabase = getSupabase();
     const admin = await requireAdmin(req, res, supabase);
     if (!admin) return;
 
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch { body = {}; }
-    }
-
+    const body = parseBody(req);
     const targetUserId = body?.user_id || body?.userId;
-    if (!targetUserId || typeof targetUserId !== 'string') {
-      return res.status(400).json({ success: false, error: 'Foydalanuvchi ID ko\u02bbrsatilmadi' });
+
+    if (!isValidUuid(targetUserId)) {
+      return jsonError(res, 400, 'Foydalanuvchi ID noto\u02bbg\u02bbri');
     }
 
     if (targetUserId === admin.userId) {
-      return res.status(400).json({ success: false, error: 'O\u02bbz admin akkauntingizni o\u02bbchira olmaysiz' });
+      return jsonError(res, 400, 'O\u02bbz admin akkauntingizni o\u02bbchira olmaysiz');
     }
 
-    // Cascade: messages → emails → public.users → auth.users
     await supabase.from('messages').delete().eq('user_id', targetUserId);
     await supabase.from('emails').delete().eq('user_id', targetUserId);
 
@@ -43,17 +36,13 @@ export default async function handler(req, res) {
       .eq('id', targetUserId);
 
     if (delErr) {
-      return res.status(500).json({
-        success: false,
-        error: 'Foydalanuvchini o\u02bbchirishda xatolik: ' + delErr.message
-      });
+      return jsonError(res, 500, 'Foydalanuvchini o\u02bbchirishda xatolik: ' + delErr.message);
     }
 
-    // Auth user ni ham o\u02bbchirish (orphan qoldirmaslik)
     try {
       await supabase.auth.admin.deleteUser(targetUserId);
-    } catch (authDelErr) {
-      console.error('[admin-delete-user] auth delete:', authDelErr?.message);
+    } catch (e) {
+      console.error('[admin-delete-user] auth:', e?.message);
     }
 
     await writeAudit('user_deleted', {
@@ -63,14 +52,12 @@ export default async function handler(req, res) {
       target: targetUserId
     });
 
-    return res.status(200).json({
-      success: true,
+    return jsonOk(res, {
       message: 'Foydalanuvchi va uning barcha pochtalari muvaffaqiyatli o\u02bbchirildi',
       deleted_user_id: targetUserId
     });
-
   } catch (err) {
     console.error('[admin-delete-user]', err.message);
-    return res.status(500).json({ success: false, error: err.message || 'Server xatoligi' });
+    return jsonError(res, 500, err.message || 'Server xatoligi');
   }
 }

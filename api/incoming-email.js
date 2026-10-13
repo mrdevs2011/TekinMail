@@ -1,5 +1,6 @@
 import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
+import { setSecurityHeaders, parseBody } from './_utils.js';
 
 // Quoted-Printable (e.g. =3D -> =, =\n -> '') decoder
 function decodeQuotedPrintable(str) {
@@ -104,7 +105,8 @@ function parseEmailPayload(rawText, initialBody, initialHtml) {
 }
 
 export default async function handler(req, res) {
-  setCors(req, res);
+  setCors(req, res, 'POST, OPTIONS');
+  setSecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -139,9 +141,14 @@ export default async function handler(req, res) {
 
     // MIME va HTML/Plain textni 1:1 mukammal ajratish
     const parsed = parseEmailPayload(body?.raw || '', body?.body || body?.text || '', body?.html || '');
-    const cleanText = parsed.text || 'Xat matni mavjud emas';
-    const cleanHtml = parsed.html || '';
-
+    const MAX_BODY = 200_000;
+    const MAX_SUBJECT = 500;
+    let cleanText = parsed.text || 'Xat matni mavjud emas';
+    let cleanHtml = parsed.html || '';
+    if (cleanText.length > MAX_BODY) cleanText = cleanText.slice(0, MAX_BODY);
+    if (cleanHtml.length > MAX_BODY) cleanHtml = cleanHtml.slice(0, MAX_BODY);
+    if (subject.length > MAX_SUBJECT) subject = subject.slice(0, MAX_SUBJECT);
+    
     if (!to_email) {
       return res.status(400).json({ success: false, error: 'to_email is required' });
     }

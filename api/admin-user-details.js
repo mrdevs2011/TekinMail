@@ -1,8 +1,10 @@
 import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
 import { requireAdmin } from './_auth.js';
+import { setSecurityHeaders } from './_utils.js';
 
 export default async function handler(req, res) {
+  setSecurityHeaders(res);
   setCors(req, res);
 
   if (req.method === 'OPTIONS') {
