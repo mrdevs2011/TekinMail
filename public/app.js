@@ -591,9 +591,37 @@ function renderMessages() {
     return;
   }
 
+// HELPER: Quoted-Printable va HTML tozalash
+function decodeQuotedPrintableClient(str) {
+  if (!str) return '';
+  const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
+  return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
+    try {
+      const bytes = [];
+      for (let i = 0; i < match.length; i += 3) {
+        bytes.push(parseInt(match.substr(i + 1, 2), 16));
+      }
+      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+    } catch (e) {
+      return match;
+    }
+  });
+}
+
+function cleanSnippetText(text) {
+  if (!text) return 'Xat matni yoʻq';
+  let clean = decodeQuotedPrintableClient(text);
+  clean = clean.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+               .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+               .replace(/<[^>]+>/g, ' ')
+               .replace(/\s+/g, ' ')
+               .trim();
+  return clean.substring(0, 80);
+}
+
   messagesListContainer.innerHTML = currentMessages.map(msg => {
     const timeFormatted = formatTime(msg.created_at);
-    const snippet = msg.body ? msg.body.substring(0, 70) : 'Welcome to the platform.';
+    const snippet = cleanSnippetText(msg.body);
     const sender = msg.from_name || 'Supabase';
 
     return `
@@ -615,20 +643,62 @@ function renderMessages() {
   }).join('');
 }
 
-// MESSAGE MODAL VIEW
+// MESSAGE MODAL VIEW (1:1 RICH EMAIL WITH BEAUTIFUL HTML PREVIEW)
 window.openMessageModal = function(msgId) {
   const msg = currentMessages.find(m => m.id === msgId);
   if (!msg) return;
 
-  msgDetailSubject.textContent = msg.subject || 'No Subject';
-  msgDetailFrom.textContent = `From: ${msg.from_name || ''} <${msg.from_address || ''}>`;
-  msgDetailTo.textContent = `To: ${msg.email_address}`;
-  msgDetailDate.textContent = `Date: ${new Date(msg.created_at).toLocaleString()}`;
+  msgDetailSubject.textContent = msg.subject || 'Mavzusiz';
+  msgDetailFrom.textContent = `Kimdan: ${msg.from_name || ''} <${msg.from_address || ''}>`;
+  msgDetailTo.textContent = `Kimga: ${msg.email_address}`;
+  msgDetailDate.textContent = `Sana: ${new Date(msg.created_at).toLocaleString()}`;
 
-  if (msg.html) {
-    msgDetailBody.innerHTML = msg.html;
+  // 1. OTP KODNI ANIQLASH VA AJRATIB KO'RSATISH
+  const combined = (msg.subject || '') + ' ' + (msg.body || '');
+  const otpMatch = combined.match(/(?:code|kod|pin|otp|tasdiqlash kodi)[^\d]{1,15}(\b\d{4,8}\b)/i) || combined.match(/\b(\d{6})\b/);
+  const otpCode = otpMatch ? otpMatch[1] : null;
+
+  msgDetailBody.innerHTML = '';
+
+  if (otpCode) {
+    const otpBanner = document.createElement('div');
+    otpBanner.className = 'msg-otp-banner';
+    otpBanner.innerHTML = `
+      <div class="msg-otp-left">
+        <span class="msg-otp-label">TASDIQLASH KODI (OTP)</span>
+        <span class="msg-otp-code">${escapeHtml(otpCode)}</span>
+      </div>
+      <button type="button" class="btn-otp-copy" onclick="copyToClipboard('${escapeHtml(otpCode)}', event)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Kodni nusxalash
+      </button>
+    `;
+    msgDetailBody.appendChild(otpBanner);
+  }
+
+  // 2. HTML YOKI MATNNI RENDER QILISH
+  let rawHtml = msg.html;
+  if (!rawHtml && msg.body && (msg.body.includes('<!doctype html') || msg.body.includes('<html'))) {
+    rawHtml = msg.body;
+  }
+
+  if (rawHtml) {
+    const decodedHtml = decodeQuotedPrintableClient(rawHtml);
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-iframe-wrap';
+
+    const iframe = document.createElement('iframe');
+    iframe.className = 'msg-email-frame';
+    iframe.sandbox = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+    iframe.srcdoc = decodedHtml;
+
+    wrap.appendChild(iframe);
+    msgDetailBody.appendChild(wrap);
   } else {
-    msgDetailBody.innerHTML = `<pre style="white-space:pre-wrap; font-family:var(--font-mono);">${escapeHtml(msg.body || '')}</pre>`;
+    const card = document.createElement('div');
+    card.className = 'msg-plain-card';
+    card.innerHTML = `<pre style="white-space:pre-wrap; font-family:var(--font-sans); font-size:13.5px; line-height:1.6; color:#f4f4f6;">${escapeHtml(msg.body || '')}</pre>`;
+    msgDetailBody.appendChild(card);
   }
 
   msgDetailModal.classList.remove('hidden');

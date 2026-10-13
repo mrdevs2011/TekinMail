@@ -31,6 +31,7 @@ export default {
           from: from,
           from_name: fromName,
           subject: subject,
+          raw: rawText,
           body: bodyText,
           html: ''
         })
