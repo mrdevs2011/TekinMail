@@ -707,7 +707,7 @@ function renderMessages() {
         </div>
         <div class="msg-time">${timeFormatted}</div>
         <div class="msg-star ${msg.is_starred ? 'active' : ''}" onclick="toggleStar('${msg.id}', event)">
-          ${msg.is_starred ? '★' : '☆'}
+          ${msg.is_starred ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
         </div>
       </div>
     `;
@@ -989,7 +989,7 @@ if (formAdminAddUser) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`✓ "${fullName}" (@${username}) muvaffaqiyatli qoʻshildi`);
+        showToast(`"${fullName}" (@${username}) muvaffaqiyatli qoʻshildi`);
         adminAddUserModal.classList.add('hidden');
         loadAdminUsers();
       } else {
@@ -1175,7 +1175,7 @@ function renderAdminInspectMessages() {
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:12px; color:var(--text-secondary);">${escapeHtml(msg.from_name || msg.from_address || 'Noma\u02bclum')}</span>
-          <span style="font-size:11px; color:var(--text-dim);">→ ${escapeHtml(msg.email_address || '')}</span>
+          <span style="font-size:11px; color:var(--text-dim);">${escapeHtml(msg.email_address || '')}</span>
         </div>
         ${snippet ? `<div style="font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(snippet)}…</div>` : ''}
       </div>
