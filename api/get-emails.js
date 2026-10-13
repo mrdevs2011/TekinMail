@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     const authHeader = req.headers.authorization || '';
     const token = authHeader.replace(/^Bearer\s+/i, '') || req.query.token;
 
-    const session = verifySessionToken(token);
+    const session = await verifySessionToken(token);
     if (!session) {
       return res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
     }

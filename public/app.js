@@ -28,15 +28,9 @@ const badgeFullName = document.getElementById('badgeFullName');
 const badgeUsername = document.getElementById('badgeUsername');
 const btnLogout = document.getElementById('btnLogout');
 
-const tabLogin = null;   // olib tashlandi — faqat login qoldi
-const tabRegister = null;
 const formLogin = document.getElementById('formLogin');
-const formRegister = null; // olib tashlandi
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
-const regFullName = null;
-const regUsername = null;
-const regPassword = null;
 
 // DOM WORKSPACE - EMAILS
 const btnAddOne = document.getElementById('btnAddOne');
@@ -905,8 +899,6 @@ if (formAdminAddUser) {
     const fullName = document.getElementById('adminNewFullName')?.value.trim();
     const username = document.getElementById('adminNewUsername')?.value.trim();
     const password = document.getElementById('adminNewPassword')?.value.trim();
-    const isAdmin = document.getElementById('adminNewIsAdmin')?.checked || false;
-
     if (!fullName || !username || !password) return;
 
     const btn = document.getElementById('btnAdminAddUserConfirm');
@@ -915,7 +907,7 @@ if (formAdminAddUser) {
       const res = await fetch('/api/admin-create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentUser.token}` },
-        body: JSON.stringify({ full_name: fullName, username, password, is_admin: isAdmin })
+        body: JSON.stringify({ full_name: fullName, username, password })
       });
       const data = await res.json();
       if (data.success) {

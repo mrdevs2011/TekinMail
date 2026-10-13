@@ -111,6 +111,16 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // Qattiq: webhook secret tekshiruvi (ixtiyoriy, lekin tavsiya etiladi)
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const provided = req.headers['x-webhook-secret'] || req.headers['authorization'] || '';
+    const clean = provided.replace(/^Bearer\s+/i, '');
+    if (clean !== webhookSecret) {
+      return res.status(401).json({ success: false, error: 'Invalid webhook secret' });
+    }
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }

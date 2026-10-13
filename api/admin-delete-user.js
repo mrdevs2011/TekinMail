@@ -1,5 +1,6 @@
 import { getSupabase } from './_supabase.js';
 import { requireAdmin } from './_auth.js';
+import { writeAudit, getClientIp } from './_audit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -55,6 +56,8 @@ export default async function handler(req, res) {
     if (delErr) {
       return res.status(500).json({ success: false, error: 'Foydalanuvchini oʻchirishda xatolik: ' + delErr.message });
     }
+
+    await writeAudit('user_deleted', { userId: admin.userId, username: admin.username, ip: getClientIp(req), target: targetUserId });
 
     return res.status(200).json({
       success: true,

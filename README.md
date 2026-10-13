@@ -299,7 +299,7 @@ Foydalanuvchining ma'lum bir email manzilini va unga kelgan barcha xatlarini baz
 
 1. **Begona manzillarni rad etish:** Agar kelgan xat manziliga tizimda hech qaysi foydalanuvchi ega bo'lmasa, xat bazaga yozilmaydi (`404 Recipient address not found in system`).
 2. **Izolyatsiyalangan Iframe:** Xat HTML kodi tizimning o'ziga ta'sir qilmasligi uchun maxsus izolyatsiyalangan `<iframe>` konteynerida render qilinadi.
-3. **Session Tokenlar:** Parollar `sha256` orqali heshlanadi, soxtalashtirishdan himoyalangan Base64 session tokenlar ishlatiladi.
+3. **Autentifikatsiya:** Supabase Auth (rasmiy JWT). Parollar Supabase tomonidan boshqariladi. Session token muddatli.
 
 ---
 

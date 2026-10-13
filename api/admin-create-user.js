@@ -1,5 +1,6 @@
 import { getSupabase } from './_supabase.js';
-import { requireAdmin, hashPassword } from './_auth.js';
+import { requireAdmin, usernameToEmail } from './_auth.js';
+import { writeAudit, getClientIp } from './_audit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,81 +28,79 @@ export default async function handler(req, res) {
     const fullName = (body?.full_name || '').trim();
     const rawUsername = (body?.username || '').trim().toLowerCase();
     const password = body?.password || '';
-    const makeAdmin = Boolean(body?.is_admin);
-
     if (!fullName || fullName.length < 2) {
-      return res.status(400).json({ success: false, error: 'Ismni toʻliq kiriting (kamida 2 ta belgi)' });
+      return res.status(400).json({ success: false, error: 'Ismni to\u2018liq kiriting (kamida 2 ta belgi)' });
     }
 
     if (!rawUsername || rawUsername.length < 3 || !/^[a-z0-9_.-]+$/.test(rawUsername)) {
       return res.status(400).json({ success: false, error: 'Username kamida 3 ta belgi (harflar, raqamlar, _, .)' });
     }
 
-    if (!password || password.length < 4) {
-      return res.status(400).json({ success: false, error: 'Parol kamida 4 ta belgi boʻlishi kerak' });
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Parol kamida 6 ta belgi bo\u2018lishi kerak' });
     }
 
-    // Username bandligini tekshirish
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id')
-      .eq('username', rawUsername)
-      .single();
+    const email = usernameToEmail(rawUsername);
 
-    if (existing) {
-      return res.status(409).json({ success: false, error: 'Bu username allaqachon mavjud' });
+    // Supabase Auth da user yaratamiz
+    const { data: authUser, error: createErr } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: fullName,
+        username: rawUsername,
+        is_admin: false
+      }
+    });
+
+    if (createErr || !authUser?.user) {
+      const msg = createErr?.message || 'User yaratishda xatolik';
+      if (msg.includes('already') || msg.includes('exists')) {
+        return res.status(409).json({ success: false, error: 'Bu username allaqachon mavjud' });
+      }
+      return res.status(500).json({ success: false, error: msg });
     }
 
-    const passwordHash = hashPassword(password);
+    const newAuthUser = authUser.user;
+
+    // public.users profilini yaratamiz (id = auth.users.id)
     const insertPayload = {
+      id: newAuthUser.id,
       full_name: fullName,
       username: rawUsername,
-      password_hash: passwordHash
+      is_admin: false,
+      password_hash: 'supabase-auth' // eski maydon uchun placeholder
     };
-    if (makeAdmin) {
-      insertPayload.is_admin = true;
-    }
 
-    let newUser;
-    const { data: createdWithAdmin, error: err1 } = await supabase
+    const { error: profileErr } = await supabase
       .from('users')
-      .insert([insertPayload])
-      .select('id, full_name, username, created_at')
-      .single();
+      .insert([insertPayload]);
 
-    if (!err1 && createdWithAdmin) {
-      newUser = createdWithAdmin;
-    } else {
-      delete insertPayload.is_admin;
-      const { data: createdBasic, error: err2 } = await supabase
-        .from('users')
-        .insert([insertPayload])
-        .select('id, full_name, username, created_at')
-        .single();
-
-      if (err2 || !createdBasic) {
-        return res.status(500).json({ success: false, error: 'Foydalanuvchi yaratishda xatolik: ' + (err2?.message || '') });
-      }
-      newUser = createdBasic;
+    if (profileErr) {
+      // Auth user yaratilgan, profil xato bo'lsa ham davom etamiz (keyin tuzatish mumkin)
+      console.error('Profile insert error:', profileErr.message);
     }
 
-    // Foydalanuvchiga dastlabki email manzilini ham ochib beramiz
+    // Dastlabki email manzil
     const domain = process.env.MAIL_DOMAIN || 'bombaclat.uz';
     const initialAddress = `${rawUsername}@${domain}`;
     await supabase.from('emails').insert([{
-      user_id: newUser.id,
+      user_id: newAuthUser.id,
       address: initialAddress,
       token: 'tk_' + Math.random().toString(36).substring(2)
     }]);
 
+    await writeAudit('user_created', { userId: admin.userId, username: admin.username, ip: getClientIp(req), target: rawUsername });
+
     return res.status(200).json({
       success: true,
-      message: 'Yangi foydalanuvchi muvaffaqiyatli yaratildi',
+      message: 'Yangi foydalanuvchi muvaffaqiyatli yaratildi (Supabase Auth)',
       user: {
-        id: newUser.id,
-        full_name: newUser.full_name,
-        username: newUser.username,
-        is_admin: makeAdmin || rawUsername === 'admin'
+        id: newAuthUser.id,
+        full_name: fullName,
+        username: rawUsername,
+        is_admin: false
       }
     });
 
