@@ -1,3 +1,21 @@
+/* Skip link (a11y) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  padding: 10px 16px;
+  background: #0284C7;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+}
+
 /* ========================================================
    TEKINMAIL // ENTERPRISE DARK DESIGN SYSTEM
    Base: Pure Black & White (Classic & Ultra-Modern)

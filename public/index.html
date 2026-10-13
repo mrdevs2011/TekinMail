@@ -2,17 +2,51 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TekinMail</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0B1120">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="TekinMail — tashkilot ichidagi elektron pochta tizimi. Hisob orqali email manzillar yarating va kiruvchi xatlarni bitta inboxda boshqaring.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MR">
+  <meta name="application-name" content="TekinMail">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TekinMail">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>TekinMail — Email</title>
+  <link rel="canonical" href="/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TekinMail">
+  <meta property="og:title" content="TekinMail">
+  <meta property="og:description" content="Tashkilot ichidagi elektron pochta tizimi. Email manzillar va inbox bitta hisobda.">
+  <meta property="og:locale" content="uz_UZ">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="TekinMail">
+  <meta name="twitter:description" content="Tashkilot ichidagi elektron pochta tizimi.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "TekinMail",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Tashkilot ichidagi elektron pochta tizimi. Email manzillar yaratish va kiruvchi xatlarni boshqarish.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#authCardBox">Asosiy kontentga oʻtish</a>
   <!-- 0. SPLASH SCREEN (MANDATORY 2-SECOND SILKY INTRO) -->
-  <div id="splashScreen" class="splash-screen">
+  <div id="splashScreen" class="splash-screen" aria-hidden="true" role="presentation">
     <div class="splash-content">
       <div class="splash-logo-wrap">
         <div class="splash-pulse-ring"></div>
@@ -152,7 +186,7 @@
             </div>
 
             <!-- LOGIN FORMA -->
-            <form id="formLogin" class="auth-form-body">
+            <form id="formLogin" class="auth-form-body" aria-label="Tizimga kirish">
               <div class="form-group">
                 <label for="loginUsername">Foydalanuvchi nomi</label>
                 <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
@@ -864,6 +898,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="/app.js" defer></script>
 </body>
 </html>
