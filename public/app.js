@@ -170,12 +170,28 @@ function showWorkspace() {
   startSync();
 }
 
+// BUTTON SPINNER HELPER
+function setButtonLoading(button, isLoading, originalText) {
+  if (!button) return;
+  if (isLoading) {
+    button.disabled = true;
+    button.classList.add('loading');
+    button.innerHTML = `<span class="btn-spinner-icon"></span><span>Kutilmoqda...</span>`;
+  } else {
+    button.disabled = false;
+    button.classList.remove('loading');
+    button.innerHTML = originalText;
+  }
+}
+
 // LOGIN SUBMIT
 formLogin.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = loginUsername.value.trim();
   const password = loginPassword.value.trim();
   if (!username || !password) return;
+
+  setButtonLoading(btnLoginSubmit, true, 'Tizimga kirish');
 
   try {
     const res = await fetch('/api/login', {
@@ -195,6 +211,8 @@ formLogin.addEventListener('submit', async (e) => {
     }
   } catch (err) {
     showToast('Tarmoq xatosi');
+  } finally {
+    setButtonLoading(btnLoginSubmit, false, 'Tizimga kirish');
   }
 });
 
@@ -205,6 +223,8 @@ formRegister.addEventListener('submit', async (e) => {
   const username = regUsername.value.trim();
   const password = regPassword.value.trim();
   if (!fullName || !username || !password) return;
+
+  setButtonLoading(btnRegisterSubmit, true, 'Root akkaunt yaratish');
 
   try {
     const res = await fetch('/api/register', {
@@ -224,6 +244,8 @@ formRegister.addEventListener('submit', async (e) => {
     }
   } catch (err) {
     showToast('Tarmoq xatosi');
+  } finally {
+    setButtonLoading(btnRegisterSubmit, false, 'Root akkaunt yaratish');
   }
 });
 

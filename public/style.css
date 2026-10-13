@@ -588,12 +588,41 @@ body {
   cursor: pointer;
   margin-top: 4px;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-primary-auth:hover {
   background: #e4e4e7;
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary-auth:disabled,
+.btn-primary-auth.loading {
+  opacity: 0.82;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* BUTTON LOADING SPINNER */
+.btn-spinner-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-top-color: #000000;
+  border-radius: 50%;
+  animation: btnSpin 0.65s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
 }
 
 .auth-footer-note {
@@ -1221,6 +1250,101 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN // DESKTOP (>= 1025px)
+   STRICT 1-SCREEN VIEWPORT: NO BODY/PAGE SCROLLBARS!
+   ONLY #emailsListContainer AND #messagesListContainer SCROLL!
+   ======================================================== */
+@media (min-width: 1025px) {
+  html, body {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  body {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  .app-root {
+    height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .top-nav {
+    flex-shrink: 0;
+  }
+
+  /* WORKSPACE FITS PERFECTLY IN 1 SCREEN */
+  .workspace-grid {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 16px;
+  }
+
+  .panel-column {
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .column-title-bar,
+  .search-wrap,
+  .inbox-filter-tabs {
+    flex-shrink: 0;
+  }
+
+  /* EXCLUSIVE INNER SCROLL FOR EMAILS */
+  .email-cards-scroll {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* EXCLUSIVE INNER SCROLL FOR INBOX MESSAGES */
+  .inbox-messages-scroll {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* AUTH SCREEN ON DESKTOP (FITS IN 1 SCREEN WITH 50/50 SPLIT) */
+  .auth-wrap {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 40px;
+    align-items: center;
+    padding: 0;
+  }
+
+  .auth-showcase-box {
+    max-height: 86vh;
+    overflow: hidden;
+  }
 }
 
 /* ========================================================
