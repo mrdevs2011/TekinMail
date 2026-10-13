@@ -1,7 +1,8 @@
 /* ========================================================
    TEKINMAIL // ENTERPRISE DARK DESIGN SYSTEM
    Base: Pure Black & White (Classic & Ultra-Modern)
-   Tertiary Accent: #38BDF8 (Subtle Sky Blue)
+   Tertiary Accent: Deeper, Richer Blue (#0284C7)
+   Full Responsive Engine: Mobile, Tablet & Desktop
    ======================================================== */
 
 :root {
@@ -23,11 +24,13 @@
   --text-dim: #52525b;
   --text-contrast: #000000;
 
-  /* TERTIARY ACCENT (#38BDF8 - USED SPARINGLY) */
-  --accent-sky: #38BDF8;
-  --accent-sky-subtle: rgba(56, 189, 248, 0.12);
-  --accent-sky-glow: rgba(56, 189, 248, 0.25);
-  --accent-sky-border: rgba(56, 189, 248, 0.35);
+  /* TERTIARY ACCENT (DEEPER, RICHER BLUE #0284C7) */
+  --accent-sky: #0284C7;
+  --accent-sky-hover: #0369A1;
+  --accent-sky-light: #0EA5E9;
+  --accent-sky-subtle: rgba(2, 132, 199, 0.15);
+  --accent-sky-glow: rgba(2, 132, 199, 0.35);
+  --accent-sky-border: rgba(2, 132, 199, 0.45);
 
   /* TYPOGRAPHY */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -45,6 +48,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -55,27 +59,28 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 18px 24px;
+  padding: 16px 20px;
   -webkit-font-smoothing: antialiased;
 }
 
 .app-root {
   width: 100%;
-  max-width: 1260px;
+  max-width: 1280px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* ========================================================
-   TOP NAVBAR (CLEAN & MINIMALIST)
+   TOP NAVBAR
    ======================================================== */
 .top-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0 12px;
+  padding: 4px 0 10px;
   border-bottom: 1px solid var(--panel-border-subtle);
+  gap: 12px;
 }
 
 .nav-brand {
@@ -84,6 +89,7 @@ body {
   gap: 10px;
   text-decoration: none;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .nav-brand-title {
@@ -100,12 +106,13 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
-  padding: 6px 14px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   transition: border-color 0.15s ease;
+  max-width: 260px;
 }
 
 .user-profile-badge:hover,
@@ -117,6 +124,7 @@ body {
   display: flex;
   flex-direction: column;
   line-height: 1.25;
+  overflow: hidden;
 }
 
 .profile-name {
@@ -124,12 +132,18 @@ body {
   font-weight: 600;
   font-size: 13px;
   letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-handle {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badge-logout-btn {
@@ -143,6 +157,7 @@ body {
   justify-content: center;
   color: var(--text-muted);
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .badge-logout-btn:hover {
@@ -156,13 +171,13 @@ body {
 }
 
 /* ========================================================
-   CLASSIC BIG-TECH AUTH SCREEN (LINEAR / VERCEL STYLE)
+   CLASSIC BIG-TECH AUTH SCREEN
    ======================================================== */
 .auth-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 50px 0 70px;
+  padding: 40px 12px 60px;
 }
 
 .auth-box {
@@ -171,11 +186,11 @@ body {
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 420px;
-  padding: 32px 28px;
+  padding: 30px 26px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 1px 1px rgba(255, 255, 255, 0.04);
+  gap: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255, 255, 255, 0.04);
 }
 
 .auth-card-head {
@@ -241,7 +256,7 @@ body {
 .auth-form-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px;
 }
 
 .form-group {
@@ -260,11 +275,11 @@ body {
 .form-group input {
   background: var(--bg-subtle);
   border: 1px solid var(--panel-border);
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
   color: #ffffff;
   font-family: var(--font-sans);
-  font-size: 13.5px;
+  font-size: 14px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -278,14 +293,14 @@ body {
   color: var(--text-dim);
 }
 
-/* PRIMARY CTA BUTTON (HIGH-END SOLID WHITE) */
+/* PRIMARY CTA BUTTON */
 .btn-primary-auth {
   background: #ffffff;
   color: #000000;
   border: none;
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 14px;
   padding: 11px;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -312,19 +327,21 @@ body {
 }
 
 /* ========================================================
-   WORKSPACE 2-COLUMN GRID (EMAILS + INBOX)
+   MOBILE SEGMENTED SWITCHER (HIDDEN ON DESKTOP & TABLET)
+   ======================================================== */
+.mobile-view-switcher {
+  display: none;
+}
+
+/* ========================================================
+   WORKSPACE GRID (DESKTOP DEFAULT)
    ======================================================== */
 .workspace-grid {
   display: grid;
-  grid-template-columns: 440px 1fr;
-  gap: 18px;
-  min-height: 660px;
-}
-
-@media (max-width: 960px) {
-  .workspace-grid {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 420px 1fr;
+  gap: 16px;
+  height: calc(100vh - 90px);
+  min-height: 600px;
 }
 
 .panel-column {
@@ -335,6 +352,7 @@ body {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  min-height: 0; /* Enables flex children scrolling */
 }
 
 .column-title-bar {
@@ -344,16 +362,17 @@ body {
   padding: 14px 18px;
   border-bottom: 1px solid var(--panel-border);
   background: var(--panel-header);
+  flex-shrink: 0;
 }
 
 .col-heading {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.4px;
 }
 
-/* ADD +1 BUTTON (CLASSIC WHITE ACTION BUTTON) */
+/* ADD +1 BUTTON */
 .btn-add-pill {
   background: #ffffff;
   border: none;
@@ -394,11 +413,12 @@ body {
   background: #1a1a20;
 }
 
-/* SEARCH WRAP & INPUT BOX */
+/* SEARCH WRAP */
 .search-wrap {
   padding: 10px 14px;
   background: var(--panel-header);
   border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
 }
 
 .search-input-box {
@@ -447,7 +467,7 @@ body {
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
-  max-height: 590px;
+  flex: 1;
 }
 
 .email-card {
@@ -562,7 +582,7 @@ body {
 }
 
 /* ========================================================
-   INBOX COLUMN & FILTER TABS (ELEGANT MINIMAL TABS)
+   INBOX FILTER TABS
    ======================================================== */
 .inbox-filter-tabs {
   display: flex;
@@ -571,6 +591,7 @@ body {
   overflow-x: auto;
   gap: 2px;
   padding: 6px 12px 0;
+  flex-shrink: 0;
 }
 
 .inbox-filter-tabs::-webkit-scrollbar {
@@ -615,7 +636,6 @@ body {
   background: var(--bg-subtle);
   flex: 1;
   overflow-y: auto;
-  max-height: 580px;
   display: flex;
   flex-direction: column;
 }
@@ -748,7 +768,7 @@ body {
 
 .modal-card.modal-large {
   max-width: 720px;
-  max-height: 80vh;
+  max-height: 82vh;
 }
 
 .modal-sub {
@@ -879,7 +899,7 @@ body {
 }
 
 /* ========================================================
-   TOAST NOTIFICATION (SLEEK FLOATING PILL)
+   TOAST NOTIFICATION
    ======================================================== */
 .toast-popup {
   position: fixed;
@@ -919,4 +939,222 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN // TABLET (769px - 1024px)
+   ======================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body {
+    padding: 14px 16px;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 330px 1fr;
+    gap: 12px;
+    height: calc(100vh - 84px);
+  }
+
+  .col-heading {
+    font-size: 18px;
+  }
+
+  .email-card {
+    padding: 10px 11px;
+    gap: 10px;
+  }
+
+  .email-address-text {
+    font-size: 12.5px;
+  }
+
+  .msg-row {
+    grid-template-columns: 24px 110px 1fr 54px 24px;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .msg-sender {
+    font-size: 12.5px;
+  }
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN // MOBILE (<= 768px)
+   ======================================================== */
+@media (max-width: 768px) {
+  body {
+    padding: 10px 12px 20px;
+  }
+
+  .app-root {
+    gap: 10px;
+  }
+
+  .top-nav {
+    padding: 2px 0 8px;
+  }
+
+  .nav-brand-title {
+    font-size: 16px;
+  }
+
+  .user-profile-badge {
+    padding: 4px 8px;
+    gap: 8px;
+    max-width: 180px;
+  }
+
+  .profile-name {
+    font-size: 12px;
+  }
+
+  .profile-handle {
+    display: none; /* Hide handle on tight mobile headers */
+  }
+
+  /* MOBILE SEGMENTED VIEW SWITCHER */
+  .mobile-view-switcher {
+    display: flex;
+    background: var(--panel-header);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mobile-switch-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-switch-btn:hover {
+    color: #ffffff;
+  }
+
+  .mobile-switch-btn.active {
+    background: #1e1e24;
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    border-left: 2px solid var(--accent-sky);
+  }
+
+  /* WORKSPACE CONTAINER ON MOBILE */
+  .workspace-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: auto;
+    min-height: unset;
+  }
+
+  .panel-column {
+    min-height: 480px;
+    max-height: calc(100vh - 140px);
+  }
+
+  .panel-column.mobile-hidden {
+    display: none !important;
+  }
+
+  .column-title-bar {
+    padding: 12px 14px;
+  }
+
+  .col-heading {
+    font-size: 18px;
+  }
+
+  /* EMAILS LIST ON MOBILE */
+  .email-cards-scroll {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .email-card {
+    padding: 12px 12px;
+  }
+
+  .email-address-text {
+    font-size: 13px;
+  }
+
+  /* INBOX MESSAGE ROWS ON MOBILE (NATIVE APP-STYLE STACK) */
+  .msg-row {
+    display: grid;
+    grid-template-areas:
+      "check sender time star"
+      "check snippet snippet snippet";
+    grid-template-columns: 24px 1fr auto 24px;
+    gap: 4px 10px;
+    padding: 12px;
+  }
+
+  .msg-check {
+    grid-area: check;
+    align-self: flex-start;
+    padding-top: 2px;
+  }
+
+  .msg-sender {
+    grid-area: sender;
+    font-size: 13.5px;
+  }
+
+  .msg-time {
+    grid-area: time;
+    font-size: 11px;
+  }
+
+  .msg-star {
+    grid-area: star;
+    font-size: 16px;
+  }
+
+  .msg-subject-snippet {
+    grid-area: snippet;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  /* AUTH ON MOBILE */
+  .auth-wrap {
+    padding: 20px 0 40px;
+  }
+
+  .auth-box {
+    padding: 24px 18px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* MODALS ON MOBILE */
+  .modal-layer {
+    padding: 10px;
+  }
+
+  .modal-card {
+    padding: 18px 16px;
+    max-width: 100%;
+  }
+
+  .toast-popup {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    text-align: center;
+  }
 }

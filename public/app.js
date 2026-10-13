@@ -33,6 +33,31 @@ const btnRefreshInbox = document.getElementById('btnRefreshInbox');
 const inboxFilterTabs = document.getElementById('inboxFilterTabs');
 const messagesListContainer = document.getElementById('messagesListContainer');
 
+// DOM WORKSPACE - MOBILE VIEW
+const btnMobileShowEmails = document.getElementById('btnMobileShowEmails');
+const btnMobileShowInbox = document.getElementById('btnMobileShowInbox');
+const mobileEmailsCount = document.getElementById('mobileEmailsCount');
+const mobileInboxCount = document.getElementById('mobileInboxCount');
+const colEmails = document.getElementById('colEmails');
+const colInbox = document.getElementById('colInbox');
+
+function switchMobileView(view) {
+  if (view === 'inbox') {
+    if (btnMobileShowInbox) btnMobileShowInbox.classList.add('active');
+    if (btnMobileShowEmails) btnMobileShowEmails.classList.remove('active');
+    if (colEmails) colEmails.classList.add('mobile-hidden');
+    if (colInbox) colInbox.classList.remove('mobile-hidden');
+  } else {
+    if (btnMobileShowEmails) btnMobileShowEmails.classList.add('active');
+    if (btnMobileShowInbox) btnMobileShowInbox.classList.remove('active');
+    if (colEmails) colEmails.classList.remove('mobile-hidden');
+    if (colInbox) colInbox.classList.add('mobile-hidden');
+  }
+}
+
+if (btnMobileShowEmails) btnMobileShowEmails.addEventListener('click', () => switchMobileView('emails'));
+if (btnMobileShowInbox) btnMobileShowInbox.addEventListener('click', () => switchMobileView('inbox'));
+
 // DOM MODALS
 const addEmailModal = document.getElementById('addEmailModal');
 const addEmailBackdrop = document.getElementById('addEmailBackdrop');
@@ -132,6 +157,10 @@ function showWorkspace() {
 
   badgeFullName.textContent = currentUser.full_name || 'Foydalanuvchi';
   badgeUsername.textContent = '@' + (currentUser.username || 'user');
+
+  if (window.innerWidth <= 768) {
+    switchMobileView('emails');
+  }
 
   loadEmails();
   startSync();
@@ -291,6 +320,8 @@ function renderEmails() {
   const visible = currentEmails.filter(e => !hidden.includes(e.address));
   const filtered = visible.filter(e => e.address.toLowerCase().includes(query));
 
+  if (mobileEmailsCount) mobileEmailsCount.textContent = visible.length;
+
   if (filtered.length === 0) {
     emailsListContainer.innerHTML = `
       <div class="empty-box">
@@ -357,6 +388,9 @@ window.selectEmailTab = function(address) {
   renderInboxTabs();
   renderEmails(); // Chap tomonda tanlangan kartani ajratib ko'rsatish
   loadMessages();
+  if (window.innerWidth <= 768) {
+    switchMobileView('inbox');
+  }
 };
 
 async function loadMessages() {
@@ -384,6 +418,8 @@ btnRefreshInbox.addEventListener('click', () => {
 });
 
 function renderMessages() {
+  if (mobileInboxCount) mobileInboxCount.textContent = currentMessages.length;
+
   if (currentMessages.length === 0) {
     messagesListContainer.innerHTML = `
       <div class="empty-box">

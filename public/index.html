@@ -16,7 +16,7 @@
     <header class="top-nav">
       <div class="nav-brand">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="12" fill="#38BDF8"/>
+          <circle cx="12" cy="12" r="12" fill="#0284C7"/>
           <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
                 stroke="#FFFFFF" 
                 stroke-width="1.8" 
@@ -48,7 +48,7 @@
         <div class="auth-card-head">
           <div class="auth-badge-icon">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="12" fill="#38BDF8"/>
+              <circle cx="12" cy="12" r="12" fill="#0284C7"/>
               <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
                     stroke="#FFFFFF" 
                     stroke-width="1.8" 
@@ -107,8 +107,26 @@
 
     <!-- 2. MAIN WORKSPACE (ESKIZDAGI 2 USTUNLI PANEL) -->
     <main id="mainWorkspace" class="workspace-grid hidden">
+      <!-- MOBILE SEGMENTED VIEW SWITCHER -->
+      <div class="mobile-view-switcher" id="mobileViewSwitcher">
+        <button id="btnMobileShowEmails" class="mobile-switch-btn active" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          <span>Emails (<span id="mobileEmailsCount">0</span>)</span>
+        </button>
+        <button id="btnMobileShowInbox" class="mobile-switch-btn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+          </svg>
+          <span>Inbox (<span id="mobileInboxCount">0</span>)</span>
+        </button>
+      </div>
+
       <!-- CHAP USTUN: EMAILS -->
-      <section class="panel-column emails-col">
+      <section class="panel-column emails-col" id="colEmails">
         <div class="column-title-bar">
           <h1 class="col-heading">Emails</h1>
           <button id="btnAddOne" class="btn-add-pill" title="Yangi email qo'shish">
@@ -134,7 +152,7 @@
       </section>
 
       <!-- O'NG USTUN: INBOX -->
-      <section class="panel-column inbox-col">
+      <section class="panel-column inbox-col" id="colInbox">
         <div class="column-title-bar">
           <h1 class="col-heading">Inbox</h1>
           <button id="btnRefreshInbox" class="btn-sync-icon" title="Yangilash">
