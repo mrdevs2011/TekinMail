@@ -28,15 +28,15 @@ const badgeFullName = document.getElementById('badgeFullName');
 const badgeUsername = document.getElementById('badgeUsername');
 const btnLogout = document.getElementById('btnLogout');
 
-const tabLogin = document.getElementById('tabLogin');
-const tabRegister = document.getElementById('tabRegister');
+const tabLogin = null;   // olib tashlandi — faqat login qoldi
+const tabRegister = null;
 const formLogin = document.getElementById('formLogin');
-const formRegister = document.getElementById('formRegister');
+const formRegister = null; // olib tashlandi
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
-const regFullName = document.getElementById('regFullName');
-const regUsername = document.getElementById('regUsername');
-const regPassword = document.getElementById('regPassword');
+const regFullName = null;
+const regUsername = null;
+const regPassword = null;
 
 // DOM WORKSPACE - EMAILS
 const btnAddOne = document.getElementById('btnAddOne');
@@ -198,242 +198,10 @@ if (btnConfirmDelete) {
 }
 
 // ==========================================
-// 1. AUTH TABS
+// 1. AUTH TABS (olib tashlandi — faqat login)
 // ==========================================
 
-tabLogin.addEventListener('click', () => {
-  tabLogin.classList.add('active');
-  tabRegister.classList.remove('active');
-  formLogin.classList.remove('hidden');
-  formRegister.classList.add('hidden');
-  loginUsername.focus();
-});
 
-tabRegister.addEventListener('click', () => {
-  tabRegister.classList.add('active');
-  tabLogin.classList.remove('active');
-  formRegister.classList.remove('hidden');
-  formLogin.classList.add('hidden');
-  regFullName.focus();
-});
-
-// ==========================================
-// 2. SESSION & AUTH
-// ==========================================
-
-function checkSession() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_AUTH);
-    if (raw) {
-      currentUser = JSON.parse(raw);
-      if (currentUser && currentUser.token && currentUser.id) {
-        showWorkspace();
-        return;
-      }
-    }
-  } catch (e) {
-    localStorage.removeItem(STORAGE_KEY_AUTH);
-  }
-  showAuth();
-  dismissSplashScreen();
-}
-
-function saveSession(user, token) {
-  currentUser = { ...user, token };
-  localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(currentUser));
-}
-
-function logout() {
-  localStorage.removeItem(STORAGE_KEY_AUTH);
-  currentUser = null;
-  currentEmails = [];
-  currentMessages = [];
-  if (syncInterval) clearInterval(syncInterval);
-  showToast('Tizimdan chiqildi');
-  showAuth();
-}
-
-btnLogout.addEventListener('click', logout);
-
-const topNav = document.getElementById('topNav');
-
-function showAuth() {
-  document.body.classList.remove('workspace-active');
-  authScreen.classList.remove('hidden');
-  mainWorkspace.classList.add('hidden');
-  const adminWs = document.getElementById('adminWorkspace');
-  if (adminWs) adminWs.classList.add('hidden');
-  userProfileBadge.classList.add('hidden');
-  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
-  if (adminNavSwitcher) adminNavSwitcher.classList.add('hidden');
-  if (topNav) topNav.classList.add('hidden');
-}
-
-function showWorkspace() {
-  document.body.classList.add('workspace-active');
-  authScreen.classList.add('hidden');
-  mainWorkspace.classList.remove('hidden');
-  const adminWs = document.getElementById('adminWorkspace');
-  if (adminWs) adminWs.classList.add('hidden');
-  userProfileBadge.classList.remove('hidden');
-  if (topNav) topNav.classList.remove('hidden');
-
-  // Admin nav switcher — faqat admin userga ko'rsatish
-  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
-  if (adminNavSwitcher) {
-    if (currentUser && currentUser.is_admin) {
-      adminNavSwitcher.classList.remove('hidden');
-    } else {
-      adminNavSwitcher.classList.add('hidden');
-    }
-  }
-
-  // Active tab indicator
-  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
-  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
-  if (btnTabWorkspace) btnTabWorkspace.classList.add('active');
-  if (btnTabAdminUsers) btnTabAdminUsers.classList.remove('active');
-
-  badgeFullName.textContent = currentUser.full_name || 'Foydalanuvchi';
-  badgeUsername.textContent = '@' + (currentUser.username || 'user');
-
-  if (window.innerWidth <= 768) {
-    switchMobileView('emails');
-  }
-
-  loadEmails();
-  startSync();
-}
-
-function showAdminPanel() {
-  document.body.classList.add('workspace-active');
-  authScreen.classList.add('hidden');
-  mainWorkspace.classList.add('hidden');
-  const adminWs = document.getElementById('adminWorkspace');
-  if (adminWs) adminWs.classList.remove('hidden');
-  userProfileBadge.classList.remove('hidden');
-  if (topNav) topNav.classList.remove('hidden');
-
-  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
-  if (adminNavSwitcher) adminNavSwitcher.classList.remove('hidden');
-
-  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
-  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
-  if (btnTabWorkspace) btnTabWorkspace.classList.remove('active');
-  if (btnTabAdminUsers) btnTabAdminUsers.classList.add('active');
-
-  badgeFullName.textContent = currentUser.full_name || 'Admin';
-  badgeUsername.textContent = '@' + (currentUser.username || 'admin');
-
-  loadAdminUsers();
-}
-
-// Admin nav tab listeners
-document.addEventListener('DOMContentLoaded', () => {
-  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
-  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
-  if (btnTabWorkspace) btnTabWorkspace.addEventListener('click', showWorkspace);
-  if (btnTabAdminUsers) btnTabAdminUsers.addEventListener('click', showAdminPanel);
-});
-
-
-// LANDING INTERACTION HELPERS
-window.toggleFaq = function(element) {
-  if (!element) return;
-  const isOpen = element.classList.contains('open');
-  document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
-  if (!isOpen) {
-    element.classList.add('open');
-  }
-};
-
-window.scrollToAuthBox = function() {
-  const box = document.getElementById('authCardBox');
-  if (box) {
-    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const input = document.getElementById('loginUsername');
-    if (input) setTimeout(() => input.focus(), 450);
-  }
-};
-
-// BUTTON SPINNER HELPER
-function setButtonLoading(button, isLoading, originalText) {
-  if (!button) return;
-  if (isLoading) {
-    button.disabled = true;
-    button.classList.add('loading');
-    button.innerHTML = `<span class="btn-spinner-icon"></span><span>Kutilmoqda...</span>`;
-  } else {
-    button.disabled = false;
-    button.classList.remove('loading');
-    button.innerHTML = originalText;
-  }
-}
-
-// LOGIN SUBMIT
-formLogin.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = loginUsername.value.trim();
-  const password = loginPassword.value.trim();
-  if (!username || !password) return;
-
-  setButtonLoading(btnLoginSubmit, true, 'Tizimga kirish');
-
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-
-    if (data.success && data.user && data.token) {
-      saveSession(data.user, data.token);
-      showToast(`Xush kelibsiz!`);
-      formLogin.reset();
-      showWorkspace();
-    } else {
-      showToast(data.error || 'Foydalanuvchi nomi yoki parol notoʻgʻri');
-    }
-  } catch (err) {
-    showToast('Tarmoq xatosi');
-  } finally {
-    setButtonLoading(btnLoginSubmit, false, 'Tizimga kirish');
-  }
-});
-
-// REGISTER SUBMIT
-formRegister.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fullName = regFullName.value.trim();
-  const username = regUsername.value.trim();
-  const password = regPassword.value.trim();
-  if (!fullName || !username || !password) return;
-
-  setButtonLoading(btnRegisterSubmit, true, 'Root akkaunt yaratish');
-
-  try {
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: fullName, username, password })
-    });
-    const data = await res.json();
-
-    if (data.success && data.user && data.token) {
-      saveSession(data.user, data.token);
-      showToast(`Root akkaunt ochildi!`);
-      formRegister.reset();
-      showWorkspace();
-    } else {
-      showToast(data.error || 'Roʻyxatdan oʻtishda xatolik');
-    }
-  } catch (err) {
-    showToast('Tarmoq xatosi');
-  } finally {
-    setButtonLoading(btnRegisterSubmit, false, 'Root akkaunt yaratish');
-  }
-});
 
 // ==========================================
 // 3. EMAILS & ADD +1 LOGIC
