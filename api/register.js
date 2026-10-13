@@ -55,29 +55,49 @@ export default async function handler(req, res) {
 
     // Yangi user yaratamiz
     const passwordHash = hashPassword(password);
-    const { data: newUser, error: createErr } = await supabase
+    const insertPayload = {
+      full_name: fullName,
+      username: rawUsername,
+      password_hash: passwordHash
+    };
+    if (rawUsername === 'admin') {
+      insertPayload.is_admin = true;
+    }
+
+    let newUser;
+    const { data: res1, error: createErr1 } = await supabase
       .from('users')
-      .insert([{
-        full_name: fullName,
-        username: rawUsername,
-        password_hash: passwordHash
-      }])
+      .insert([insertPayload])
       .select('id, full_name, username, created_at')
       .single();
 
-    if (createErr || !newUser) {
-      return res.status(500).json({ success: false, error: 'Foydalanuvchi yaratishda xatolik: ' + (createErr?.message || '') });
+    if (!createErr1 && res1) {
+      newUser = res1;
+    } else {
+      delete insertPayload.is_admin;
+      const { data: res2, error: createErr2 } = await supabase
+        .from('users')
+        .insert([insertPayload])
+        .select('id, full_name, username, created_at')
+        .single();
+
+      if (createErr2 || !res2) {
+        return res.status(500).json({ success: false, error: 'Foydalanuvchi yaratishda xatolik: ' + (createErr2?.message || '') });
+      }
+      newUser = res2;
     }
 
     // Token yaratamiz
     const token = createSessionToken(newUser.id, newUser.username);
+    const isAdmin = Boolean(rawUsername === 'admin');
 
     return res.status(200).json({
       success: true,
       user: {
         id: newUser.id,
         full_name: newUser.full_name,
-        username: newUser.username
+        username: newUser.username,
+        is_admin: isAdmin
       },
       token
     });

@@ -29,3 +29,37 @@ export function verifySessionToken(token) {
     return null;
   }
 }
+
+// Admin huquqini tekshirish
+export async function requireAdmin(req, res, supabase) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '') || req.query?.token;
+  const session = verifySessionToken(token);
+  if (!session) {
+    res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
+    return null;
+  }
+
+  // 1. Agar username 'admin' bo'lsa darhol ruxsat
+  if (session.username.toLowerCase() === 'admin') {
+    return session;
+  }
+
+  // 2. Bazadan is_admin ustunini tekshirish
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, username, is_admin')
+      .eq('id', session.userId)
+      .single();
+
+    if (user && (user.is_admin === true || user.username.toLowerCase() === 'admin')) {
+      return session;
+    }
+  } catch (e) {
+    // is_admin ustuni hali mavjud bo'lmasligi mumkin
+  }
+
+  res.status(403).json({ success: false, error: 'Faqat admin uchun ruxsat etilgan' });
+  return null;
+}

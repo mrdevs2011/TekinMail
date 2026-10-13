@@ -102,13 +102,19 @@ const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
 
 // STATE
-let currentUser = null; // { id, full_name, username, token }
+let currentUser = null; // { id, full_name, username, token, is_admin }
 let currentEmails = [];
 let currentMessages = [];
 let activeFilter = 'all'; // 'all' yoki email address
 let activeDomain = 'bombaclat.uz';
 let syncInterval = null;
 let emailToDelete = null;
+
+// ADMIN STATE
+let adminUsers = [];
+let adminUserToDelete = null;
+let adminInspectData = { user: null, emails: [], messages: [] };
+let adminCurrentInspectTab = 'emails';
 
 // SKELETON LOADERS
 function renderEmailsSkeleton() {
@@ -255,7 +261,11 @@ function showAuth() {
   document.body.classList.remove('workspace-active');
   authScreen.classList.remove('hidden');
   mainWorkspace.classList.add('hidden');
+  const adminWs = document.getElementById('adminWorkspace');
+  if (adminWs) adminWs.classList.add('hidden');
   userProfileBadge.classList.add('hidden');
+  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
+  if (adminNavSwitcher) adminNavSwitcher.classList.add('hidden');
   if (topNav) topNav.classList.add('hidden');
 }
 
@@ -263,8 +273,26 @@ function showWorkspace() {
   document.body.classList.add('workspace-active');
   authScreen.classList.add('hidden');
   mainWorkspace.classList.remove('hidden');
+  const adminWs = document.getElementById('adminWorkspace');
+  if (adminWs) adminWs.classList.add('hidden');
   userProfileBadge.classList.remove('hidden');
   if (topNav) topNav.classList.remove('hidden');
+
+  // Admin nav switcher — faqat admin userga ko'rsatish
+  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
+  if (adminNavSwitcher) {
+    if (currentUser && currentUser.is_admin) {
+      adminNavSwitcher.classList.remove('hidden');
+    } else {
+      adminNavSwitcher.classList.add('hidden');
+    }
+  }
+
+  // Active tab indicator
+  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
+  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
+  if (btnTabWorkspace) btnTabWorkspace.classList.add('active');
+  if (btnTabAdminUsers) btnTabAdminUsers.classList.remove('active');
 
   badgeFullName.textContent = currentUser.full_name || 'Foydalanuvchi';
   badgeUsername.textContent = '@' + (currentUser.username || 'user');
@@ -276,6 +304,38 @@ function showWorkspace() {
   loadEmails();
   startSync();
 }
+
+function showAdminPanel() {
+  document.body.classList.add('workspace-active');
+  authScreen.classList.add('hidden');
+  mainWorkspace.classList.add('hidden');
+  const adminWs = document.getElementById('adminWorkspace');
+  if (adminWs) adminWs.classList.remove('hidden');
+  userProfileBadge.classList.remove('hidden');
+  if (topNav) topNav.classList.remove('hidden');
+
+  const adminNavSwitcher = document.getElementById('adminNavSwitcher');
+  if (adminNavSwitcher) adminNavSwitcher.classList.remove('hidden');
+
+  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
+  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
+  if (btnTabWorkspace) btnTabWorkspace.classList.remove('active');
+  if (btnTabAdminUsers) btnTabAdminUsers.classList.add('active');
+
+  badgeFullName.textContent = currentUser.full_name || 'Admin';
+  badgeUsername.textContent = '@' + (currentUser.username || 'admin');
+
+  loadAdminUsers();
+}
+
+// Admin nav tab listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const btnTabWorkspace = document.getElementById('btnTabWorkspace');
+  const btnTabAdminUsers = document.getElementById('btnTabAdminUsers');
+  if (btnTabWorkspace) btnTabWorkspace.addEventListener('click', showWorkspace);
+  if (btnTabAdminUsers) btnTabAdminUsers.addEventListener('click', showAdminPanel);
+});
+
 
 // LANDING INTERACTION HELPERS
 window.toggleFaq = function(element) {
@@ -759,5 +819,355 @@ function formatTime(iso) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// ==========================================
+// 6. ADMIN PANEL LOGIC
+// ==========================================
+
+// -- Load users --
+async function loadAdminUsers() {
+  const list = document.getElementById('adminUsersList');
+  if (!list || !currentUser) return;
+  list.innerHTML = `<div style="padding:40px; text-align:center; color:#555; font-size:13px; grid-column:1/-1;">Yuklanmoqda...</div>`;
+
+  try {
+    const res = await fetch('/api/admin-users', {
+      headers: { 'Authorization': `Bearer ${currentUser.token}` }
+    });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error || 'Xatolik'); return; }
+
+    adminUsers = data.users || [];
+    const stats = data.stats || {};
+    const statUsers = document.getElementById('adminStatTotalUsers');
+    const statEmails = document.getElementById('adminStatTotalEmails');
+    const statMsgs = document.getElementById('adminStatTotalMessages');
+    if (statUsers) statUsers.textContent = stats.total_users || 0;
+    if (statEmails) statEmails.textContent = stats.total_emails || 0;
+    if (statMsgs) statMsgs.textContent = stats.total_messages || 0;
+
+    renderAdminUsers(adminUsers);
+  } catch (err) {
+    showToast('Server bilan aloqa uzildi');
+  }
+}
+
+function renderAdminUsers(users) {
+  const list = document.getElementById('adminUsersList');
+  if (!list) return;
+
+  if (!users || users.length === 0) {
+    list.innerHTML = `<div class="admin-empty-state" style="grid-column:1/-1;">Hozircha hech qanday foydalanuvchi yoʻq.</div>`;
+    return;
+  }
+
+  list.innerHTML = users.map(u => {
+    const initial = (u.full_name || u.username || 'U')[0].toUpperCase();
+    const isAdmin = u.is_admin || u.username?.toLowerCase() === 'admin';
+    const isSelf = u.id === currentUser.id;
+    const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString('uz-UZ') : '–';
+    return `
+      <div class="admin-user-card" data-user-id="${u.id}">
+        <div class="admin-user-card-head">
+          <div class="admin-user-avatar ${isAdmin ? 'admin-user-avatar-gold' : ''}">${initial}</div>
+          <div class="admin-user-info">
+            <div class="admin-user-name-row">
+              <span class="admin-user-fullname">${escapeHtml(u.full_name || '–')}</span>
+              <span class="admin-role-badge-pill ${isAdmin ? 'badge-admin' : 'badge-user'}">${isAdmin ? 'Admin' : 'User'}</span>
+            </div>
+            <div class="admin-user-handle">@${escapeHtml(u.username || '–')}</div>
+          </div>
+        </div>
+
+        <div class="admin-user-meta-chips">
+          <div class="admin-meta-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span>Emaillar: <strong>${u.email_count || 0}</strong></span>
+          </div>
+          <div class="admin-meta-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            <span>Xatlar: <strong>${u.message_count || 0}</strong></span>
+          </div>
+          <div class="admin-meta-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>${joinedDate}</span>
+          </div>
+        </div>
+
+        <div class="admin-user-actions-row">
+          <button class="admin-btn-action" onclick="openAdminUserDetail('${u.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Ko'rish
+          </button>
+          <button class="admin-btn-delete" ${isSelf ? 'disabled title="O\'z akkauntingizni o\'chira olmaysiz"' : `onclick="openAdminDeleteUser('${u.id}', '${escapeHtml(u.full_name || u.username)}', '${escapeHtml(u.username)}')"`}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            O'chirish
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// -- Admin search filter --
+const adminSearchInput = document.getElementById('adminSearchInput');
+if (adminSearchInput) {
+  adminSearchInput.addEventListener('input', () => {
+    const q = adminSearchInput.value.trim().toLowerCase();
+    if (!q) { renderAdminUsers(adminUsers); return; }
+    const filtered = adminUsers.filter(u =>
+      (u.full_name || '').toLowerCase().includes(q) ||
+      (u.username || '').toLowerCase().includes(q)
+    );
+    renderAdminUsers(filtered);
+  });
+}
+
+// -- Refresh button --
+const btnAdminRefresh = document.getElementById('btnAdminRefresh');
+if (btnAdminRefresh) {
+  btnAdminRefresh.addEventListener('click', loadAdminUsers);
+}
+
+// -- ADD USER MODAL --
+const btnAdminAddUser = document.getElementById('btnAdminAddUser');
+const adminAddUserModal = document.getElementById('adminAddUserModal');
+const adminAddUserBackdrop = document.getElementById('adminAddUserBackdrop');
+const btnAdminAddUserCancel = document.getElementById('btnAdminAddUserCancel');
+const formAdminAddUser = document.getElementById('formAdminAddUser');
+
+if (btnAdminAddUser) btnAdminAddUser.addEventListener('click', () => {
+  if (formAdminAddUser) formAdminAddUser.reset();
+  if (adminAddUserModal) adminAddUserModal.classList.remove('hidden');
+});
+if (btnAdminAddUserCancel) btnAdminAddUserCancel.addEventListener('click', () => {
+  if (adminAddUserModal) adminAddUserModal.classList.add('hidden');
+});
+if (adminAddUserBackdrop) adminAddUserBackdrop.addEventListener('click', () => {
+  if (adminAddUserModal) adminAddUserModal.classList.add('hidden');
+});
+
+if (formAdminAddUser) {
+  formAdminAddUser.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fullName = document.getElementById('adminNewFullName')?.value.trim();
+    const username = document.getElementById('adminNewUsername')?.value.trim();
+    const password = document.getElementById('adminNewPassword')?.value.trim();
+    const isAdmin = document.getElementById('adminNewIsAdmin')?.checked || false;
+
+    if (!fullName || !username || !password) return;
+
+    const btn = document.getElementById('btnAdminAddUserConfirm');
+    setButtonLoading(btn, true, 'Userni Saqlash');
+    try {
+      const res = await fetch('/api/admin-create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ full_name: fullName, username, password, is_admin: isAdmin })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✓ "${fullName}" (@${username}) muvaffaqiyatli qoʻshildi`);
+        adminAddUserModal.classList.add('hidden');
+        loadAdminUsers();
+      } else {
+        showToast(data.error || 'Yaratishda xatolik');
+      }
+    } catch (err) {
+      showToast('Server bilan aloqa uzildi');
+    } finally {
+      setButtonLoading(btn, false, 'Userni Saqlash');
+    }
+  });
+}
+
+// -- DELETE USER MODAL --
+const adminDeleteUserModal = document.getElementById('adminDeleteUserModal');
+const adminDeleteUserBackdrop = document.getElementById('adminDeleteUserBackdrop');
+const btnAdminCancelDelete = document.getElementById('btnAdminCancelDelete');
+const btnAdminConfirmDelete = document.getElementById('btnAdminConfirmDelete');
+const adminDeleteTargetInfo = document.getElementById('adminDeleteTargetInfo');
+
+window.openAdminDeleteUser = function(userId, fullName, username) {
+  adminUserToDelete = userId;
+  if (adminDeleteTargetInfo) adminDeleteTargetInfo.textContent = `${fullName} (@${username})`;
+  if (adminDeleteUserModal) adminDeleteUserModal.classList.remove('hidden');
+};
+
+function closeAdminDeleteModal() {
+  adminUserToDelete = null;
+  if (adminDeleteUserModal) adminDeleteUserModal.classList.add('hidden');
+}
+
+if (btnAdminCancelDelete) btnAdminCancelDelete.addEventListener('click', closeAdminDeleteModal);
+if (adminDeleteUserBackdrop) adminDeleteUserBackdrop.addEventListener('click', closeAdminDeleteModal);
+
+if (btnAdminConfirmDelete) {
+  btnAdminConfirmDelete.addEventListener('click', async () => {
+    if (!adminUserToDelete || !currentUser) return;
+    const targetId = adminUserToDelete;
+    setButtonLoading(btnAdminConfirmDelete, true, "Ha, butunlay o'chirilsin");
+    try {
+      const res = await fetch('/api/admin-delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentUser.token}` },
+        body: JSON.stringify({ user_id: targetId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Foydalanuvchi muvaffaqiyatli oʻchirildi');
+        closeAdminDeleteModal();
+        loadAdminUsers();
+      } else {
+        showToast(data.error || "O'chirishda xatolik");
+      }
+    } catch (err) {
+      showToast('Server bilan aloqa uzildi');
+    } finally {
+      setButtonLoading(btnAdminConfirmDelete, false, "Ha, butunlay o'chirilsin");
+    }
+  });
+}
+
+// -- USER DETAIL INSPECTOR MODAL --
+const adminUserDetailModal = document.getElementById('adminUserDetailModal');
+const adminUserDetailBackdrop = document.getElementById('adminUserDetailBackdrop');
+const btnCloseAdminUserDetail = document.getElementById('btnCloseAdminUserDetail');
+const btnTabInspectEmails = document.getElementById('btnTabInspectEmails');
+const btnTabInspectMessages = document.getElementById('btnTabInspectMessages');
+const adminInspectEmailsPanel = document.getElementById('adminInspectEmailsPanel');
+const adminInspectMessagesPanel = document.getElementById('adminInspectMessagesPanel');
+
+function closeAdminUserDetail() {
+  if (adminUserDetailModal) adminUserDetailModal.classList.add('hidden');
+}
+if (btnCloseAdminUserDetail) btnCloseAdminUserDetail.addEventListener('click', closeAdminUserDetail);
+if (adminUserDetailBackdrop) adminUserDetailBackdrop.addEventListener('click', closeAdminUserDetail);
+
+// Inspector tab switching
+if (btnTabInspectEmails) {
+  btnTabInspectEmails.addEventListener('click', () => {
+    adminCurrentInspectTab = 'emails';
+    btnTabInspectEmails.classList.add('active');
+    btnTabInspectMessages?.classList.remove('active');
+    adminInspectEmailsPanel?.classList.remove('hidden');
+    adminInspectMessagesPanel?.classList.add('hidden');
+  });
+}
+if (btnTabInspectMessages) {
+  btnTabInspectMessages.addEventListener('click', () => {
+    adminCurrentInspectTab = 'messages';
+    btnTabInspectMessages.classList.add('active');
+    btnTabInspectEmails?.classList.remove('active');
+    adminInspectMessagesPanel?.classList.remove('hidden');
+    adminInspectEmailsPanel?.classList.add('hidden');
+    renderAdminInspectMessages();
+  });
+}
+
+window.openAdminUserDetail = async function(userId) {
+  if (!currentUser) return;
+  // Reset tabs
+  adminCurrentInspectTab = 'emails';
+  if (btnTabInspectEmails) btnTabInspectEmails.classList.add('active');
+  if (btnTabInspectMessages) btnTabInspectMessages.classList.remove('active');
+  if (adminInspectEmailsPanel) adminInspectEmailsPanel.classList.remove('hidden');
+  if (adminInspectMessagesPanel) adminInspectMessagesPanel.classList.add('hidden');
+
+  // Show modal with loading state
+  if (adminUserDetailModal) adminUserDetailModal.classList.remove('hidden');
+  const emailsList = document.getElementById('adminInspectEmailsList');
+  if (emailsList) emailsList.innerHTML = `<div class="admin-empty-state">Yuklanmoqda...</div>`;
+
+  try {
+    const res = await fetch(`/api/admin-user-details?user_id=${userId}`, {
+      headers: { 'Authorization': `Bearer ${currentUser.token}` }
+    });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error || 'Xatolik'); closeAdminUserDetail(); return; }
+
+    adminInspectData = { user: data.user, emails: data.emails || [], messages: data.messages || [] };
+    const u = data.user;
+
+    // Fill header
+    const initial = (u.full_name || u.username || 'U')[0].toUpperCase();
+    const avatarEl = document.getElementById('adminDetailAvatar');
+    if (avatarEl) avatarEl.textContent = initial;
+    const nameEl = document.getElementById('adminDetailFullName');
+    if (nameEl) nameEl.textContent = u.full_name || '–';
+    const usernameEl = document.getElementById('adminDetailUsername');
+    if (usernameEl) usernameEl.textContent = '@' + (u.username || '–');
+    const joinedEl = document.getElementById('adminDetailJoined');
+    if (joinedEl) joinedEl.textContent = `Aʼzo boʻlgan: ${u.created_at ? new Date(u.created_at).toLocaleDateString('uz-UZ') : '–'}`;
+
+    // Update counts
+    const emailsCount = document.getElementById('adminInspectEmailsCount');
+    const messagesCount = document.getElementById('adminInspectMessagesCount');
+    if (emailsCount) emailsCount.textContent = adminInspectData.emails.length;
+    if (messagesCount) messagesCount.textContent = adminInspectData.messages.length;
+
+    // Render emails tab
+    renderAdminInspectEmails();
+
+  } catch (err) {
+    showToast('Server bilan aloqa uzildi');
+    closeAdminUserDetail();
+  }
+};
+
+function renderAdminInspectEmails() {
+  const list = document.getElementById('adminInspectEmailsList');
+  if (!list) return;
+  const emails = adminInspectData.emails;
+  if (!emails || emails.length === 0) {
+    list.innerHTML = `<div class="admin-empty-state">Bu foydalanuvchida hech qanday email manzili yoʻq.</div>`;
+    return;
+  }
+  list.innerHTML = emails.map(email => {
+    const date = email.created_at ? new Date(email.created_at).toLocaleDateString('uz-UZ') : '–';
+    return `
+      <div class="admin-inspect-item-card">
+        <span style="font-family:var(--font-mono); font-size:13px; color:#38bdf8; font-weight:600;">${escapeHtml(email.address)}</span>
+        <span style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">${date}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAdminInspectMessages() {
+  const list = document.getElementById('adminInspectMessagesList');
+  if (!list) return;
+  const messages = adminInspectData.messages;
+  if (!messages || messages.length === 0) {
+    list.innerHTML = `<div class="admin-empty-state">Bu foydalanuvchiga hali hech qanday xat kelganmagan.</div>`;
+    return;
+  }
+  list.innerHTML = messages.map(msg => {
+    const date = msg.created_at ? new Date(msg.created_at).toLocaleString('uz-UZ') : '–';
+    const snippet = (msg.body || msg.subject || '').replace(/<[^>]+>/g, '').substring(0, 90);
+    return `
+      <div class="admin-inspect-msg-card" onclick='adminViewMessage(${JSON.stringify(msg.id)})'>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span style="font-size:13px; font-weight:600; color:#fff; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(msg.subject || '(Mavzusiz)')}</span>
+          <span style="font-size:11px; color:var(--text-dim); flex-shrink:0;">${date}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:12px; color:var(--text-secondary);">${escapeHtml(msg.from_name || msg.from_address || 'Noma\u02bclum')}</span>
+          <span style="font-size:11px; color:var(--text-dim);">→ ${escapeHtml(msg.email_address || '')}</span>
+        </div>
+        ${snippet ? `<div style="font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(snippet)}…</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// Admin can view a user's message (reuses existing openMessageModal)
+window.adminViewMessage = function(msgId) {
+  const msg = adminInspectData.messages.find(m => m.id === msgId);
+  if (msg && window.openMessageModal) {
+    openMessageModal(msg);
+  }
+};
+
 // BOOTSTRAP
 checkSession();
+

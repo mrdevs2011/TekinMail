@@ -48,6 +48,27 @@
         <span class="nav-brand-title">TekinMail</span>
       </div>
 
+      <!-- Admin Navigation Switcher (Only visible to Admin) -->
+      <div id="adminNavSwitcher" class="admin-nav-switcher hidden">
+        <button id="btnTabWorkspace" class="admin-tab-btn active" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+          </svg>
+          <span>Pochta</span>
+        </button>
+        <button id="btnTabAdminUsers" class="admin-tab-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>Foydalanuvchilar</span>
+          <span class="admin-tab-pill">Admin</span>
+        </button>
+      </div>
+
       <!-- Right Actions: Docs Link & User Profile Badge -->
       <div style="display:flex; align-items:center; gap:12px;">
         <a href="/docs" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#38bdf8; text-decoration:none; padding:5px 10px; background:rgba(2,132,199,0.15); border:1px solid rgba(2,132,199,0.3); border-radius:6px; transition:0.2s;">
@@ -618,6 +639,86 @@
       </section>
     </main>
 
+    <!-- 3. ADMIN WORKSPACE (FOYDALANUVCHILAR BOSHQARUVI) -->
+    <main id="adminWorkspace" class="admin-workspace hidden">
+      <div class="admin-container">
+        <!-- Admin Top Bar -->
+        <div class="admin-top-bar">
+          <div class="admin-header-titles">
+            <div class="admin-pretitle">
+              <span class="admin-status-indicator"></span>
+              Admin Boshqaruv Paneli
+            </div>
+            <h1 class="admin-title">Foydalanuvchilar Boshqaruvi</h1>
+            <p class="admin-subtitle">Barcha foydalanuvchilar, ochilgan pochtalar va kelgan xatlarni toʻliq nazorat qilish, yangi user qoʻshish va oʻchirish.</p>
+          </div>
+
+          <div class="admin-top-actions">
+            <button id="btnAdminAddUser" class="btn-primary-admin" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>+ Yangi User Qoʻshish</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Stats Row -->
+        <div class="admin-stats-row">
+          <div class="admin-stat-card">
+            <div class="stat-icon-wrap" style="background: rgba(2, 132, 199, 0.15); color: #38bdf8;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-details">
+              <div class="stat-label">Jami Foydalanuvchilar</div>
+              <div class="stat-value" id="adminStatTotalUsers">0</div>
+            </div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <div class="stat-details">
+              <div class="stat-label">Ochilgan Emaillar</div>
+              <div class="stat-value" id="adminStatTotalEmails">0</div>
+            </div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="stat-icon-wrap" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            </div>
+            <div class="stat-details">
+              <div class="stat-label">Qabul Qilingan Xatlar</div>
+              <div class="stat-value" id="adminStatTotalMessages">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="admin-filter-bar">
+          <div class="admin-search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="adminSearchInput" placeholder="Ism yoki username bo'yicha qidirish..." autocomplete="off">
+          </div>
+          <button id="btnAdminRefresh" class="admin-btn-secondary" type="button" title="Yangilash">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            <span>Yangilash</span>
+          </button>
+        </div>
+
+        <!-- Users Grid / List -->
+        <div id="adminUsersList" class="admin-users-grid">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </div>
+    </main>
+
     <!-- ADD EMAIL CUSTOM MODAL / PROMPT -->
     <div id="addEmailModal" class="modal-layer hidden">
       <div class="modal-backdrop-click" id="addEmailBackdrop"></div>
@@ -678,6 +779,109 @@
         <div class="modal-btns">
           <button type="button" id="btnCancelDelete" class="btn-modal-cancel">Bekor qilish</button>
           <button type="button" id="btnConfirmDelete" class="btn-modal-danger">Ha, butunlay oʻchirilsin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN: ADD USER MODAL -->
+    <div id="adminAddUserModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="adminAddUserBackdrop"></div>
+      <div class="modal-card">
+        <h3>Yangi Foydalanuvchi Qoʻshish</h3>
+        <p class="modal-sub">Yangi user yaratilganda unga avtomatik birinchi email ochiladi:</p>
+        <form id="formAdminAddUser">
+          <div class="admin-form-group">
+            <label class="admin-input-label">Toʻliq Ism</label>
+            <input type="text" id="adminNewFullName" class="admin-text-input" placeholder="masalan: Ali Valiyev" required>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-input-label">Username</label>
+            <input type="text" id="adminNewUsername" class="admin-text-input" placeholder="masalan: alidev" required autocomplete="off">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-input-label">Parol</label>
+            <input type="password" id="adminNewPassword" class="admin-text-input" placeholder="Kamida 4 ta belgi" required>
+          </div>
+          <div class="admin-checkbox-row">
+            <label class="admin-checkbox-label">
+              <input type="checkbox" id="adminNewIsAdmin">
+              <span>Admin huquqini berish (Admin Role)</span>
+            </label>
+          </div>
+          <div class="modal-btns">
+            <button type="button" id="btnAdminAddUserCancel" class="btn-modal-cancel">Bekor qilish</button>
+            <button type="submit" id="btnAdminAddUserConfirm" class="btn-modal-submit">Userni Saqlash</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN: USER DETAILS / INSPECTOR MODAL -->
+    <div id="adminUserDetailModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="adminUserDetailBackdrop"></div>
+      <div class="modal-card modal-large admin-inspector-card">
+        <div class="msg-detail-head">
+          <div class="admin-detail-head-info">
+            <div class="admin-user-avatar large" id="adminDetailAvatar">U</div>
+            <div>
+              <h2 id="adminDetailFullName" style="font-size:18px; font-weight:700; color:#fff;">User Name</h2>
+              <div class="admin-detail-meta-row">
+                <span id="adminDetailUsername" class="admin-handle-badge">@username</span>
+                <span id="adminDetailJoined" class="admin-date-muted">A'zo bo'lgan: ...</span>
+              </div>
+            </div>
+          </div>
+          <button id="btnCloseAdminUserDetail" class="btn-modal-close">&times;</button>
+        </div>
+
+        <!-- Inspector Tabs (Emaillar / Kelgan Xatlar) -->
+        <div class="admin-inspector-tabs">
+          <button id="btnTabInspectEmails" class="admin-inspect-tab active" type="button">
+            <span>Ochilgan Emaillar (<span id="adminInspectEmailsCount">0</span>)</span>
+          </button>
+          <button id="btnTabInspectMessages" class="admin-inspect-tab" type="button">
+            <span>Kelgan Xatlar (<span id="adminInspectMessagesCount">0</span>)</span>
+          </button>
+        </div>
+
+        <!-- Tab 1 Content: Emails list -->
+        <div id="adminInspectEmailsPanel" class="admin-inspect-panel">
+          <div id="adminInspectEmailsList" class="admin-inspect-items-scroll">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Tab 2 Content: Messages list -->
+        <div id="adminInspectMessagesPanel" class="admin-inspect-panel hidden">
+          <div id="adminInspectMessagesList" class="admin-inspect-items-scroll">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN: DELETE USER CONFIRMATION MODAL -->
+    <div id="adminDeleteUserModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="adminDeleteUserBackdrop"></div>
+      <div class="modal-card">
+        <div class="modal-alert-header">
+          <div class="modal-alert-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Foydalanuvchini oʻchirish</h3>
+            <p class="modal-sub">Ushbu foydalanuvchini bazadan butunlay oʻchirmoqchimisiz?</p>
+          </div>
+        </div>
+        <div class="delete-target-preview" id="adminDeleteTargetInfo">User (@username)</div>
+        <p class="delete-warning-text">⚠️ DIQQAT: Foydalanuvchining barcha ochgan pochtalari va unga kelgan barcha xatlari bazadan toʻliq va qaytarib boʻlmas darajada oʻchiriladi (CASCADE).</p>
+        <div class="modal-btns">
+          <button type="button" id="btnAdminCancelDelete" class="btn-modal-cancel">Bekor qilish</button>
+          <button type="button" id="btnAdminConfirmDelete" class="btn-modal-danger">Ha, butunlay oʻchirilsin</button>
         </div>
       </div>
     </div>

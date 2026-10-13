@@ -55,3 +55,7 @@ CREATE POLICY "Allow public all on emails" ON public.emails FOR ALL USING (true)
 
 DROP POLICY IF EXISTS "Allow public all on messages" ON public.messages;
 CREATE POLICY "Allow public all on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
+
+-- 4. ADMIN ROLLARI (MIGRATION)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+UPDATE public.users SET is_admin = true WHERE LOWER(username) = 'admin';

@@ -29,14 +29,26 @@ export default async function handler(req, res) {
     }
 
     // Foydalanuvchini bazadan qidiramiz
-    const { data: user, error: userErr } = await supabase
+    let user;
+    const { data: userWithAdmin, error: userErr1 } = await supabase
       .from('users')
-      .select('id, full_name, username, password_hash')
+      .select('id, full_name, username, password_hash, is_admin')
       .eq('username', rawUsername)
       .single();
 
-    if (userErr || !user) {
-      return res.status(401).json({ success: false, error: 'Foydalanuvchi nomi yoki parol notoʻgʻri' });
+    if (!userErr1 && userWithAdmin) {
+      user = userWithAdmin;
+    } else {
+      const { data: basicUser, error: userErr2 } = await supabase
+        .from('users')
+        .select('id, full_name, username, password_hash')
+        .eq('username', rawUsername)
+        .single();
+
+      if (userErr2 || !basicUser) {
+        return res.status(401).json({ success: false, error: 'Foydalanuvchi nomi yoki parol notoʻgʻri' });
+      }
+      user = basicUser;
     }
 
     // Parol mosligini tekshiramiz
@@ -47,13 +59,15 @@ export default async function handler(req, res) {
 
     // Token yaratamiz
     const token = createSessionToken(user.id, user.username);
+    const isAdmin = Boolean(user.is_admin === true || user.username.toLowerCase() === 'admin');
 
     return res.status(200).json({
       success: true,
       user: {
         id: user.id,
         full_name: user.full_name,
-        username: user.username
+        username: user.username,
+        is_admin: isAdmin
       },
       token
     });
