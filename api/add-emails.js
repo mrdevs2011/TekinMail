@@ -1,7 +1,7 @@
 import { getSupabase } from './_supabase.js';
 import { verifySessionToken } from './_auth.js';
 
-const DOMAIN = process.env.MAIL_DOMAIN || 'tekinmail.uz';
+const DOMAIN = process.env.MAIL_DOMAIN || 'bombaclat.uz';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,37 +31,56 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
     }
 
-    // 5 ta unikal prefiks yaratamiz
-    const prefixes = ['dev', 'core', 'user', 'lab', 'box', 'hub', 'pro', 'net', 'fast', 'cl', 'ai', 'cloud'];
-    const createdEmails = [];
-    const inserts = [];
+    let customPrefix = (body?.prefix || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
 
-    for (let i = 0; i < 5; i++) {
-      const randPref = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const randNum = Math.floor(1000 + Math.random() * 9000);
-      const randHex = Math.random().toString(36).substring(2, 5);
-      const emailAddress = `${randPref}_${randNum}${randHex}@${DOMAIN}`;
+    // Agar maxsus prefiks berilmagan bo'lsa
+    if (!customPrefix) {
+      const { data: existingEmails } = await supabase
+        .from('emails')
+        .select('address')
+        .eq('user_id', session.userId);
 
-      inserts.push({
-        user_id: session.userId,
-        address: emailAddress,
-        token: 'tk_' + Math.random().toString(36).substring(2)
-      });
+      const count = (existingEmails || []).length;
+      if (count === 0) {
+        customPrefix = session.username;
+      } else {
+        customPrefix = `${session.username}_${count + 1}`;
+      }
     }
+
+    const targetAddress = `${customPrefix}@${DOMAIN}`;
+
+    // Mavjudligini tekshiramiz
+    const { data: duplicate } = await supabase
+      .from('emails')
+      .select('id')
+      .eq('address', targetAddress)
+      .single();
+
+    if (duplicate) {
+      const uniqueSuffix = Math.floor(100 + Math.random() * 900);
+      customPrefix = `${customPrefix}_${uniqueSuffix}`;
+    }
+
+    const finalAddress = `${customPrefix}@${DOMAIN}`;
 
     const { data: inserted, error: insErr } = await supabase
       .from('emails')
-      .insert(inserts)
-      .select('id, address, created_at');
+      .insert([{
+        user_id: session.userId,
+        address: finalAddress,
+        token: 'tk_' + Math.random().toString(36).substring(2)
+      }])
+      .select('id, address, created_at')
+      .single();
 
     if (insErr) {
-      return res.status(500).json({ success: false, error: 'Emaillarni saqlashda xatolik: ' + insErr.message });
+      return res.status(500).json({ success: false, error: 'Emailni saqlashda xatolik: ' + insErr.message });
     }
 
     return res.status(200).json({
       success: true,
-      added_count: (inserted || []).length,
-      emails: inserted || []
+      email: inserted
     });
 
   } catch (err) {

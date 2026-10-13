@@ -3,34 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tekinmail // root email hub</title>
+  <title>tekinmail // emails & inbox</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="shell">
-    <!-- Header -->
-    <header class="header">
-      <div class="brand">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="app-root">
+    <!-- TOP HEADER -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect width="20" height="16" x="2" y="4" rx="2"/>
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
         </svg>
-        <span class="brand-name">tekinmail</span>
-        <span class="badge" id="domainBadge">@...</span>
+        <span class="nav-brand-title">tekinmail</span>
       </div>
 
-      <!-- User profile badge (logged in bo'lganda ko'rinadi) -->
-      <div id="userProfileBar" class="user-bar hidden">
-        <div class="user-info">
-          <span id="displayFullName" class="user-fullname">...</span>
-          <span id="displayUsername" class="user-username">@...</span>
+      <!-- User Profile Badge (Eskizdagi qizil badge) -->
+      <div id="userProfileBadge" class="profile-red-badge hidden">
+        <div class="profile-text">
+          <span id="badgeFullName" class="profile-name">Muhammadrasul Qosimov</span>
+          <span id="badgeUsername" class="profile-handle">@bymrdev</span>
         </div>
-        <button id="btnLogout" class="btn-logout" title="Hisobdan chiqish">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button id="btnLogout" class="badge-logout-btn" title="Chiqish">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" x2="9" y1="12" y2="12"/>
@@ -39,95 +38,136 @@
       </div>
     </header>
 
-    <!-- 1. AUTH CARD (LOGIN & REGISTER) -->
-    <main id="authCard" class="card">
-      <!-- Tabs (Default: Login) -->
-      <div class="auth-tabs">
-        <button id="tabLogin" class="auth-tab-btn active">kirish (log in)</button>
-        <button id="tabRegister" class="auth-tab-btn">ro'yxatdan o'tish</button>
-      </div>
-
-      <!-- A. LOGIN FORMA (DEFAULT) -->
-      <form id="formLogin" class="auth-form">
-        <div class="field">
-          <label for="loginUsername">username</label>
-          <input type="text" id="loginUsername" placeholder="username kiriting..." autocomplete="username" required autofocus>
-        </div>
-        <div class="field">
-          <label for="loginPassword">parol</label>
-          <input type="password" id="loginPassword" placeholder="parolni kiriting..." autocomplete="current-password" required>
-        </div>
-        <button type="submit" id="btnLoginSubmit" class="btn btn-action full-width">tizimga kirish</button>
-        <p class="switch-prompt">Hisobingiz yo'qmi? <a href="#" id="linkToRegister">Ro'yxatdan o'ting</a></p>
-      </form>
-
-      <!-- B. REGISTER FORMA -->
-      <form id="formRegister" class="auth-form hidden">
-        <div class="field">
-          <label for="regFullName">ism</label>
-          <input type="text" id="regFullName" placeholder="to'liq ismingiz..." autocomplete="name" required>
-        </div>
-        <div class="field">
-          <label for="regUsername">username</label>
-          <input type="text" id="regUsername" placeholder="noyob username tanlang..." autocomplete="username" required>
-        </div>
-        <div class="field">
-          <label for="regPassword">parol</label>
-          <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." autocomplete="new-password" required>
-        </div>
-        <button type="submit" id="btnRegisterSubmit" class="btn btn-action full-width">root hisob ochish</button>
-        <p class="switch-prompt">Hisobingiz bormi? <a href="#" id="linkToLogin">Kirish</a></p>
-      </form>
-    </main>
-
-    <!-- 2. DASHBOARD CARD (EMAILS HUB) -->
-    <main id="dashboardCard" class="card hidden">
-      <!-- Action Bar -->
-      <div class="action-bar">
-        <div class="meta">
-          <h2>mening emaillarim</h2>
-          <span class="count-pill" id="emailsCount">0</span>
+    <!-- 1. AUTH SCREEN (KIRISH / RO'YXATDAN O'TISH) -->
+    <main id="authScreen" class="auth-wrap">
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button id="tabLogin" class="auth-tab active">kirish</button>
+          <button id="tabRegister" class="auth-tab">ro'yxatdan o'tish</button>
         </div>
 
-        <button id="btnAddFive" class="btn btn-action">
-          <svg id="btnIconPlus" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5v14"/>
-          </svg>
-          <svg id="btnIconLock" class="hidden" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span id="btnText">add 5</span>
-        </button>
-      </div>
+        <!-- LOGIN FORMA -->
+        <form id="formLogin" class="auth-form-body">
+          <div class="form-group">
+            <label>username</label>
+            <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
+          </div>
+          <div class="form-group">
+            <label>parol</label>
+            <input type="password" id="loginPassword" placeholder="parol..." autocomplete="current-password" required>
+          </div>
+          <button type="submit" id="btnLoginSubmit" class="btn-primary-auth">tizimga kirish</button>
+        </form>
 
-      <!-- Cooldown Box -->
-      <div id="cooldownBanner" class="cooldown-box hidden">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <span>qayta qo'shish uchun kuting: <strong id="cooldownTimerDisplay">05:00</strong></span>
-      </div>
-
-      <!-- Search Box -->
-      <div class="search-box">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="text" id="emailSearch" placeholder="emaillarni qidirish..." autocomplete="off" spellcheck="false">
-      </div>
-
-      <!-- Emails List -->
-      <div class="list" id="emailsList">
-        <div class="empty">
-          <p>hozircha emaillar yo'q</p>
-          <span>birinchi 5 ta emailni ochish uchun <code>add 5</code> ni bosing</span>
-        </div>
+        <!-- REGISTER FORMA -->
+        <form id="formRegister" class="auth-form-body hidden">
+          <div class="form-group">
+            <label>ism (to'liq ismingiz)</label>
+            <input type="text" id="regFullName" placeholder="masalan: Muhammadrasul Qosimov" required>
+          </div>
+          <div class="form-group">
+            <label>username</label>
+            <input type="text" id="regUsername" placeholder="masalan: bymrdev" required>
+          </div>
+          <div class="form-group">
+            <label>parol</label>
+            <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." required>
+          </div>
+          <button type="submit" id="btnRegisterSubmit" class="btn-primary-auth">root akkaunt yaratish</button>
+        </form>
       </div>
     </main>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast hidden">
-      <span id="toastText">nusxalandi</span>
+    <!-- 2. MAIN WORKSPACE (ESKIZDAGI 2 USTUNLI PANEL) -->
+    <main id="mainWorkspace" class="workspace-grid hidden">
+      <!-- CHAP USTUN: EMAILS -->
+      <section class="panel-column emails-col">
+        <div class="column-title-bar">
+          <h1 class="col-heading">Emails</h1>
+          <button id="btnAddOne" class="btn-add-pill" title="Yangi email qo'shish">
+            <span>ADD +1</span>
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-wrap">
+          <input type="text" id="emailSearchInput" placeholder="search emails" autocomplete="off" spellcheck="false">
+        </div>
+
+        <!-- Emails Cards List -->
+        <div class="email-cards-scroll" id="emailsListContainer">
+          <!-- Dynamic cards injected by JS -->
+        </div>
+      </section>
+
+      <!-- O'NG USTUN: INBOX -->
+      <section class="panel-column inbox-col">
+        <div class="column-title-bar">
+          <h1 class="col-heading">Inbox</h1>
+          <button id="btnRefreshInbox" class="btn-sync-icon" title="Yangilash">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+              <path d="M3 21v-5h5"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filter Tabs (Eskizdagi qizil filtr tablar) -->
+        <div class="inbox-filter-tabs" id="inboxFilterTabs">
+          <button class="filter-tab active" data-filter="all">Barchasi</button>
+          <!-- Dynamic email tabs injected by JS -->
+        </div>
+
+        <!-- Messages List (Gmail / Supabase Style) -->
+        <div class="inbox-messages-scroll" id="messagesListContainer">
+          <!-- Dynamic messages rows injected by JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- ADD EMAIL CUSTOM MODAL / PROMPT -->
+    <div id="addEmailModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="addEmailBackdrop"></div>
+      <div class="modal-card">
+        <h3>Yangi Email Qo'shish</h3>
+        <p class="modal-sub">Ixtiyoriy prefiks kiriting yoki bo'sh qoldirib avtomatik yarating:</p>
+        <form id="formAddCustomEmail">
+          <div class="prefix-input-wrap">
+            <input type="text" id="customEmailPrefix" placeholder="masalan: otheracc, test, mrdev" autofocus>
+            <span id="domainSuffixLabel">@bombaclat.uz</span>
+          </div>
+          <div class="modal-btns">
+            <button type="button" id="btnAddEmailCancel" class="btn-modal-cancel">Bekor qilish</button>
+            <button type="submit" id="btnAddEmailConfirm" class="btn-modal-submit">Yaratish</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MESSAGE DETAIL MODAL -->
+    <div id="msgDetailModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="msgDetailBackdrop"></div>
+      <div class="modal-card modal-large">
+        <div class="msg-detail-head">
+          <div class="msg-detail-meta">
+            <h2 id="msgDetailSubject">Subject</h2>
+            <div class="msg-detail-from">
+              <span id="msgDetailFrom">From: ...</span>
+              <span id="msgDetailTo">To: ...</span>
+              <span id="msgDetailDate">Date: ...</span>
+            </div>
+          </div>
+          <button id="btnCloseMsgDetail" class="btn-modal-close">&times;</button>
+        </div>
+        <div class="msg-detail-body" id="msgDetailBody"></div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast-popup hidden">
+      <span id="toastMsg">copied</span>
     </div>
   </div>
 
