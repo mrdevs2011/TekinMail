@@ -13,7 +13,7 @@
 <body>
   <div class="app-root">
     <!-- TOP HEADER -->
-    <header class="top-nav">
+    <header class="top-nav hidden" id="topNav">
       <div class="nav-brand">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="12" fill="#0284C7"/>
@@ -42,65 +42,159 @@
       </div>
     </header>
 
-    <!-- 1. AUTH SCREEN (KIRISH / RO'YXATDAN O'TISH) -->
+    <!-- 1. AUTH SCREEN (DESKTOP: LEFT LOGIN, RIGHT SHOWCASE ADS VIDEO LOOP) -->
     <main id="authScreen" class="auth-wrap">
-      <div class="auth-box">
-        <div class="auth-card-head">
-          <div class="auth-badge-icon">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="12" fill="#0284C7"/>
-              <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
-                    stroke="#FFFFFF" 
-                    stroke-width="1.8" 
-                    stroke-linecap="round" 
-                    stroke-linejoin="round"/>
+      <!-- LEFT PANE: LOGIN / REGISTER CARD -->
+      <div class="auth-left-pane">
+        <div class="auth-box">
+          <div class="auth-card-head">
+            <div class="auth-badge-icon">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+                <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                      stroke="#FFFFFF" 
+                      stroke-width="1.8" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h2 class="auth-card-title">TekinMail</h2>
+            <p class="auth-card-desc">Root boshqaruv markaziga kirish</p>
+          </div>
+
+          <div class="auth-tabs">
+            <button id="tabLogin" class="auth-tab active" type="button">Kirish</button>
+            <button id="tabRegister" class="auth-tab" type="button">Ro'yxatdan o'tish</button>
+          </div>
+
+          <!-- LOGIN FORMA -->
+          <form id="formLogin" class="auth-form-body">
+            <div class="form-group">
+              <label for="loginUsername">Username</label>
+              <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Parol</label>
+              <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
+            </div>
+            <button type="submit" id="btnLoginSubmit" class="btn-primary-auth">Tizimga kirish</button>
+          </form>
+
+          <!-- REGISTER FORMA -->
+          <form id="formRegister" class="auth-form-body hidden">
+            <div class="form-group">
+              <label for="regFullName">To'liq ism (Ism Familiya)</label>
+              <input type="text" id="regFullName" placeholder="Muhammadrasul Qosimov" required>
+            </div>
+            <div class="form-group">
+              <label for="regUsername">Username</label>
+              <input type="text" id="regUsername" placeholder="bymrdev" required>
+            </div>
+            <div class="form-group">
+              <label for="regPassword">Parol</label>
+              <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." required>
+            </div>
+            <button type="submit" id="btnRegisterSubmit" class="btn-primary-auth">Root akkaunt yaratish</button>
+          </form>
+
+          <div class="auth-footer-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
+            <span>Root hisob uchun tashqi email yoki raqam talab qilinmaydi</span>
           </div>
-          <h2 class="auth-card-title">TekinMail</h2>
-          <p class="auth-card-desc">Root boshqaruv markaziga kirish</p>
         </div>
+      </div>
 
-        <div class="auth-tabs">
-          <button id="tabLogin" class="auth-tab active" type="button">Kirish</button>
-          <button id="tabRegister" class="auth-tab" type="button">Ro'yxatdan o'tish</button>
-        </div>
+      <!-- RIGHT PANE: DESKTOP SHOWCASE ADS / VIDEO DEMO BOX (DESKTOP ONLY) -->
+      <div class="auth-right-pane">
+        <div class="auth-showcase-box">
+          <div class="showcase-top-bar">
+            <div class="showcase-traffic-lights">
+              <span class="light-dot"></span>
+              <span class="light-dot"></span>
+              <span class="light-dot"></span>
+            </div>
+            <div class="showcase-badge-pill">
+              <span class="live-pulse-dot"></span>
+              <span>LIVE DEMO • LOOP</span>
+            </div>
+          </div>
 
-        <!-- LOGIN FORMA -->
-        <form id="formLogin" class="auth-form-body">
-          <div class="form-group">
-            <label for="loginUsername">Username</label>
-            <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Parol</label>
-            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
-          </div>
-          <button type="submit" id="btnLoginSubmit" class="btn-primary-auth">Tizimga kirish</button>
-        </form>
+          <!-- ANIMATED DEMO SHOWCASE SCREEN -->
+          <div class="showcase-player-screen">
+            <div class="showcase-content-flow">
+              <div class="showcase-header-tag">
+                <span class="tag-pill">QANDAY ISHLAYDI?</span>
+                <h3>Cheksiz vaqtinchalik emaillar</h3>
+                <p>Spamsiz, to'liq anonim va 1 ta root akkauntdan boshqaruv</p>
+              </div>
 
-        <!-- REGISTER FORMA -->
-        <form id="formRegister" class="auth-form-body hidden">
-          <div class="form-group">
-            <label for="regFullName">To'liq ism (Ism Familiya)</label>
-            <input type="text" id="regFullName" placeholder="Muhammadrasul Qosimov" required>
-          </div>
-          <div class="form-group">
-            <label for="regUsername">Username</label>
-            <input type="text" id="regUsername" placeholder="bymrdev" required>
-          </div>
-          <div class="form-group">
-            <label for="regPassword">Parol</label>
-            <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." required>
-          </div>
-          <button type="submit" id="btnRegisterSubmit" class="btn-primary-auth">Root akkaunt yaratish</button>
-        </form>
+              <!-- INTERACTIVE / LOOPING ANIMATION CARDS -->
+              <div class="showcase-flow-cards">
+                <div class="flow-card step-1">
+                  <div class="flow-card-num">01</div>
+                  <div class="flow-card-body">
+                    <div class="flow-card-title">Bir bosishda yangi email</div>
+                    <div class="flow-email-mock">
+                      <span class="mock-dot"></span>
+                      <code>root-temp@bombaclat.uz</code>
+                      <span class="mock-badge">Nusxalandi ✓</span>
+                    </div>
+                  </div>
+                </div>
 
-        <div class="auth-footer-note">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <span>Root hisob uchun tashqi email yoki raqam talab qilinmaydi</span>
+                <div class="flow-card step-2">
+                  <div class="flow-card-num">02</div>
+                  <div class="flow-card-body">
+                    <div class="flow-card-title">Istalgan saytda ro'yxatdan o'ting</div>
+                    <div class="flow-services-pills">
+                      <span>Claude</span>
+                      <span>OpenAI</span>
+                      <span>GitHub</span>
+                      <span>Supabase</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flow-card step-3">
+                  <div class="flow-card-num">03</div>
+                  <div class="flow-card-body">
+                    <div class="flow-card-title">Tasdiqlash kodi 1 soniyada Inbox-da</div>
+                    <div class="flow-otp-box">
+                      <div class="otp-meta">
+                        <span class="otp-from">Anthropic / Claude</span>
+                        <span class="otp-time">hozirgina</span>
+                      </div>
+                      <div class="otp-code">KOD: <strong>849201</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- KEY VALUE STATS -->
+              <div class="showcase-perks">
+                <div class="perk-item">
+                  <span class="perk-val">100%</span>
+                  <span class="perk-lbl">Anonimlik</span>
+                </div>
+                <div class="perk-item">
+                  <span class="perk-val">0 sek</span>
+                  <span class="perk-lbl">Kutish vaqti</span>
+                </div>
+                <div class="perk-item">
+                  <span class="perk-val">0 Spam</span>
+                  <span class="perk-lbl">Toza pochta</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- LOOP TIMELINE PROGRESS BAR -->
+            <div class="showcase-timeline-bar">
+              <div class="timeline-indicator"></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

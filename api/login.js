@@ -36,13 +36,13 @@ export default async function handler(req, res) {
       .single();
 
     if (userErr || !user) {
-      return res.status(401).json({ success: false, error: 'Bunday username topilmadi' });
+      return res.status(401).json({ success: false, error: 'Foydalanuvchi nomi yoki parol notoʻgʻri' });
     }
 
     // Parol mosligini tekshiramiz
     const inputHash = hashPassword(password);
     if (inputHash !== user.password_hash) {
-      return res.status(401).json({ success: false, error: 'Parol notoʻgʻri' });
+      return res.status(401).json({ success: false, error: 'Foydalanuvchi nomi yoki parol notoʻgʻri' });
     }
 
     // Token yaratamiz

@@ -144,16 +144,20 @@ function logout() {
 
 btnLogout.addEventListener('click', logout);
 
+const topNav = document.getElementById('topNav');
+
 function showAuth() {
   authScreen.classList.remove('hidden');
   mainWorkspace.classList.add('hidden');
   userProfileBadge.classList.add('hidden');
+  if (topNav) topNav.classList.add('hidden');
 }
 
 function showWorkspace() {
   authScreen.classList.add('hidden');
   mainWorkspace.classList.remove('hidden');
   userProfileBadge.classList.remove('hidden');
+  if (topNav) topNav.classList.remove('hidden');
 
   badgeFullName.textContent = currentUser.full_name || 'Foydalanuvchi';
   badgeUsername.textContent = '@' + (currentUser.username || 'user');
@@ -187,7 +191,7 @@ formLogin.addEventListener('submit', async (e) => {
       formLogin.reset();
       showWorkspace();
     } else {
-      showToast(data.error || 'Kirishda xatolik');
+      showToast(data.error || 'Foydalanuvchi nomi yoki parol notoʻgʻri');
     }
   } catch (err) {
     showToast('Tarmoq xatosi');
