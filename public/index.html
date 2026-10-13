@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tekinmail // instant aliases</title>
+  <title>tekinmail // root email hub</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="shell">
@@ -22,37 +22,70 @@
         <span class="brand-name">tekinmail</span>
         <span class="badge">@tekinmail.abrdns.com</span>
       </div>
+
+      <!-- User profile badge (logged in bo'lganda ko'rinadi) -->
+      <div id="userProfileBar" class="user-bar hidden">
+        <div class="user-info">
+          <span id="displayFullName" class="user-fullname">...</span>
+          <span id="displayUsername" class="user-username">@...</span>
+        </div>
+        <button id="btnLogout" class="btn-logout" title="Hisobdan chiqish">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" x2="9" y1="12" y2="12"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <!-- 1. LOGIN CARD (2-STEP) -->
-    <main id="loginCard" class="card">
-      <div class="login-header">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <h2 id="loginTitle">admin authentication</h2>
-        <p id="loginSubtitle">kirish uchun 1-parolni kiriting</p>
+    <!-- 1. AUTH CARD (LOGIN & REGISTER) -->
+    <main id="authCard" class="card">
+      <!-- Tabs (Default: Login) -->
+      <div class="auth-tabs">
+        <button id="tabLogin" class="auth-tab-btn active">kirish (log in)</button>
+        <button id="tabRegister" class="auth-tab-btn">ro'yxatdan o'tish</button>
       </div>
 
-      <!-- Step 1: Pass 1 -->
-      <form id="formPass1" class="login-form">
-        <input type="password" id="inputPass1" placeholder="enter password 1..." autocomplete="current-password" required autofocus>
-        <button type="submit" class="btn btn-action full-width">continue</button>
+      <!-- A. LOGIN FORMA (DEFAULT) -->
+      <form id="formLogin" class="auth-form">
+        <div class="field">
+          <label for="loginUsername">username</label>
+          <input type="text" id="loginUsername" placeholder="username kiriting..." autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="loginPassword">parol</label>
+          <input type="password" id="loginPassword" placeholder="parolni kiriting..." autocomplete="current-password" required>
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="btn btn-action full-width">tizimga kirish</button>
+        <p class="switch-prompt">Hisobingiz yo'qmi? <a href="#" id="linkToRegister">Ro'yxatdan o'ting</a></p>
       </form>
 
-      <!-- Step 2: Pass 2 -->
-      <form id="formPass2" class="login-form hidden">
-        <input type="password" id="inputPass2" placeholder="enter password 2 (security key)..." autocomplete="current-password" required>
-        <button type="submit" class="btn btn-action full-width">verify & access</button>
+      <!-- B. REGISTER FORMA -->
+      <form id="formRegister" class="auth-form hidden">
+        <div class="field">
+          <label for="regFullName">ism</label>
+          <input type="text" id="regFullName" placeholder="to'liq ismingiz..." autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="regUsername">username</label>
+          <input type="text" id="regUsername" placeholder="noyob username tanlang..." autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="regPassword">parol</label>
+          <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." autocomplete="new-password" required>
+        </div>
+        <button type="submit" id="btnRegisterSubmit" class="btn btn-action full-width">root hisob ochish</button>
+        <p class="switch-prompt">Hisobingiz bormi? <a href="#" id="linkToLogin">Kirish</a></p>
       </form>
     </main>
 
-    <!-- 2. ASOSIY BOSHQARUV PANELI -->
-    <main id="appCard" class="card hidden">
+    <!-- 2. DASHBOARD CARD (EMAILS HUB) -->
+    <main id="dashboardCard" class="card hidden">
+      <!-- Action Bar -->
       <div class="action-bar">
         <div class="meta">
-          <h2>aliases</h2>
+          <h2>mening emaillarim</h2>
           <span class="count-pill" id="emailsCount">0</span>
         </div>
 
@@ -72,7 +105,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
-        <span>cooldown: <strong id="cooldownTimerDisplay">05:00</strong></span>
+        <span>qayta qo'shish uchun kuting: <strong id="cooldownTimerDisplay">05:00</strong></span>
       </div>
 
       <!-- Search Box -->
@@ -80,21 +113,21 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
-        <input type="text" id="emailSearch" placeholder="filter aliases..." autocomplete="off" spellcheck="false">
+        <input type="text" id="emailSearch" placeholder="emaillarni qidirish..." autocomplete="off" spellcheck="false">
       </div>
 
       <!-- Emails List -->
       <div class="list" id="emailsList">
         <div class="empty">
-          <p>no aliases yet</p>
-          <span>click <code>add 5</code> to allocate</span>
+          <p>hozircha emaillar yo'q</p>
+          <span>birinchi 5 ta emailni ochish uchun <code>add 5</code> ni bosing</span>
         </div>
       </div>
     </main>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden">
-      <span id="toastText">copied</span>
+      <span id="toastText">nusxalandi</span>
     </div>
   </div>
 

@@ -1,9 +1,10 @@
 import { getSupabase } from './_supabase.js';
+import { hashPassword, createSessionToken } from './_auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -20,43 +21,44 @@ export default async function handler(req, res) {
       try { body = JSON.parse(body); } catch (e) { body = {}; }
     }
 
-    const { step, pass1, pass2 } = body || {};
+    const rawUsername = (body?.username || '').trim().toLowerCase();
+    const password = body?.password || '';
 
-    const { data: auth, error } = await supabase
-      .from('admin_auth')
-      .select('pass1, pass2')
-      .eq('id', 1)
+    if (!rawUsername || !password) {
+      return res.status(400).json({ success: false, error: 'Username va parolni kiriting' });
+    }
+
+    // Foydalanuvchini bazadan qidiramiz
+    const { data: user, error: userErr } = await supabase
+      .from('users')
+      .select('id, full_name, username, password_hash')
+      .eq('username', rawUsername)
       .single();
 
-    if (error || !auth) {
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Admin auth table not initialized in Supabase' 
-      });
+    if (userErr || !user) {
+      return res.status(401).json({ success: false, error: 'Bunday username topilmadi' });
     }
 
-    // 1-bosqich tekshiruvi
-    if (step === 1) {
-      if (pass1 === auth.pass1) {
-        return res.status(200).json({ success: true, next_step: 2 });
-      }
-      return res.status(401).json({ success: false, error: '1-parol notoʻgʻri' });
+    // Parol mosligini tekshiramiz
+    const inputHash = hashPassword(password);
+    if (inputHash !== user.password_hash) {
+      return res.status(401).json({ success: false, error: 'Parol notoʻgʻri' });
     }
 
-    // 2-bosqich tekshiruvi
-    if (step === 2) {
-      if (pass1 === auth.pass1 && pass2 === auth.pass2) {
-        return res.status(200).json({ 
-          success: true, 
-          token: 'auth_' + Date.now().toString(36) 
-        });
-      }
-      return res.status(401).json({ success: false, error: '2-parol notoʻgʻri' });
-    }
+    // Token yaratamiz
+    const token = createSessionToken(user.id, user.username);
 
-    return res.status(400).json({ success: false, error: 'Invalid step' });
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        username: user.username
+      },
+      token
+    });
 
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Server xatoligi' });
   }
 }
