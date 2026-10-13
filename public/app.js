@@ -598,9 +598,21 @@ window.selectEmailTab = function(address) {
   }
 };
 
-async function loadMessages() {
+function messagesSignature(list) {
+  if (!list || !list.length) return '0';
+  // id + is_read + is_starred — UI o'zgarishi mumkin bo'lgan maydonlar
+  return list.length + '|' + list.map(m =>
+    String(m.id) + ':' + (m.is_read ? '1' : '0') + (m.is_starred ? 's' : '')
+  ).join(',');
+}
+
+async function loadMessages(opts = {}) {
   if (!currentUser) return;
-  if (currentMessages.length === 0) {
+  const force = Boolean(opts.force);
+  const silent = Boolean(opts.silent);
+
+  // Faqat birinchi yuklashda skeleton (fon polling da emas)
+  if (!silent && currentMessages.length === 0) {
     renderMessagesSkeleton();
   }
 
@@ -617,7 +629,12 @@ async function loadMessages() {
       return;
     }
     if (data.success) {
-      currentMessages = data.messages || [];
+      const next = data.messages || [];
+      const prevSig = messagesSignature(currentMessages);
+      const nextSig = messagesSignature(next);
+      // O'zgarish yo'q — UI ni qayta chizmaymiz
+      if (!force && prevSig === nextSig) return;
+      currentMessages = next;
       renderMessages();
     }
   } catch (err) {
@@ -626,7 +643,7 @@ async function loadMessages() {
 }
 
 btnRefreshInbox.addEventListener('click', () => {
-  loadMessages();
+  loadMessages({ force: true });
   showToast('Inbox yangilandi');
 });
 
@@ -779,14 +796,14 @@ window.toggleStar = function(msgId, event) {
   }
 };
 
-// AUTO SYNC EVERY 8 SECONDS
+// Fon tekshiruv: faqat o'zgarish bo'lsa UI yangilanadi
 function startSync() {
   if (syncInterval) clearInterval(syncInterval);
   syncInterval = setInterval(() => {
     if (currentUser) {
-      loadMessages();
+      loadMessages({ silent: true });
     }
-  }, 8000);
+  }, 12000);
 }
 
 // ==========================================
