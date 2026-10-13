@@ -2100,77 +2100,21 @@ body {
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
 
-/* OTP BANNER */
-.msg-otp-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(2, 132, 199, 0.12);
-  border: 1px solid var(--accent-sky-border);
-  padding: 12px 18px;
-  border-radius: var(--radius-md);
-  gap: 12px;
-}
-
-.msg-otp-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.msg-otp-label {
-  font-size: 10px;
-  font-weight: 800;
-  font-family: var(--font-mono);
-  color: var(--accent-sky);
-  letter-spacing: 0.5px;
-}
-
-.msg-otp-code {
-  font-size: 24px;
-  font-weight: 800;
-  font-family: var(--font-mono);
-  color: #ffffff;
-  letter-spacing: 3px;
-  text-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
-}
-
-.btn-otp-copy {
-  background: var(--accent-sky);
-  color: #ffffff;
-  border: none;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.btn-otp-copy:hover {
-  background: var(--accent-sky-hover);
-  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
-}
-
-/* EMAIL HTML VIEW FRAME */
+/* EMAIL HTML VIEW FRAME (1:1 NATIVE EMAIL RENDERER) */
 .msg-iframe-wrap {
   width: 100%;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .msg-email-frame {
   width: 100%;
-  height: 540px;
+  height: 580px;
+  min-height: 480px;
   border: none;
   display: block;
   background: #ffffff;
@@ -2180,7 +2124,7 @@ body {
   background: var(--bg-subtle);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
-  padding: 16px 20px;
+  padding: 20px;
 }
 
 /* ========================================================

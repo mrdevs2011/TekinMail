@@ -655,44 +655,47 @@ window.openMessageModal = function(msgId) {
   msgDetailTo.textContent = `Kimga: ${msg.email_address}`;
   msgDetailDate.textContent = `Sana: ${new Date(msg.created_at).toLocaleString()}`;
 
-  // 1. OTP KODNI ANIQLASH VA AJRATIB KO'RSATISH
-  const combined = (msg.subject || '') + ' ' + (msg.body || '');
-  const otpMatch = combined.match(/(?:code|kod|pin|otp|tasdiqlash kodi)[^\d]{1,15}(\b\d{4,8}\b)/i) || combined.match(/\b(\d{6})\b/);
-  const otpCode = otpMatch ? otpMatch[1] : null;
-
   msgDetailBody.innerHTML = '';
 
-  if (otpCode) {
-    const otpBanner = document.createElement('div');
-    otpBanner.className = 'msg-otp-banner';
-    otpBanner.innerHTML = `
-      <div class="msg-otp-left">
-        <span class="msg-otp-label">TASDIQLASH KODI (OTP)</span>
-        <span class="msg-otp-code">${escapeHtml(otpCode)}</span>
-      </div>
-      <button type="button" class="btn-otp-copy" onclick="copyToClipboard('${escapeHtml(otpCode)}', event)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Kodni nusxalash
-      </button>
-    `;
-    msgDetailBody.appendChild(otpBanner);
-  }
-
-  // 2. HTML YOKI MATNNI RENDER QILISH
   let rawHtml = msg.html;
   if (!rawHtml && msg.body && (msg.body.includes('<!doctype html') || msg.body.includes('<html'))) {
     rawHtml = msg.body;
   }
 
   if (rawHtml) {
-    const decodedHtml = decodeQuotedPrintableClient(rawHtml);
+    let decodedHtml = decodeQuotedPrintableClient(rawHtml);
+
+    // Rasmlarni to'siqsiz yuklash uchun no-referrer va barcha linklar yangi oynada ochilishi uchun base target
+    if (decodedHtml.includes('<head>')) {
+      decodedHtml = decodedHtml.replace('<head>', '<head><meta name="referrer" content="no-referrer"><base target="_blank">');
+    } else if (decodedHtml.includes('<head ')) {
+      decodedHtml = decodedHtml.replace(/<head[^>]*>/, '$&<meta name="referrer" content="no-referrer"><base target="_blank">');
+    } else {
+      decodedHtml = '<meta name="referrer" content="no-referrer"><base target="_blank">' + decodedHtml;
+    }
+
+    // Barcha img teglariga referrerpolicy="no-referrer" qo'shamiz
+    decodedHtml = decodedHtml.replace(/<img\s+/gi, '<img referrerpolicy="no-referrer" ');
+
     const wrap = document.createElement('div');
     wrap.className = 'msg-iframe-wrap';
 
     const iframe = document.createElement('iframe');
     iframe.className = 'msg-email-frame';
-    iframe.sandbox = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+    // Sandbox olib tashlandi - rasmlar to'liq va erkin yuklanadi
     iframe.srcdoc = decodedHtml;
+
+    iframe.onload = () => {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc && doc.body) {
+          const scrollH = doc.body.scrollHeight;
+          if (scrollH > 350) {
+            iframe.style.height = (scrollH + 40) + 'px';
+          }
+        }
+      } catch (e) {}
+    };
 
     wrap.appendChild(iframe);
     msgDetailBody.appendChild(wrap);
