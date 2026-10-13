@@ -4,6 +4,21 @@
 
 const STORAGE_KEY_AUTH = 'tekinmail_user_session';
 const STORAGE_KEY_HIDDEN = 'tekinmail_hidden_emails_';
+const SPLASH_MIN_DURATION = 2000;
+const splashStartTime = Date.now();
+
+function dismissSplashScreen() {
+  const splash = document.getElementById('splashScreen');
+  if (!splash) return;
+  const elapsed = Date.now() - splashStartTime;
+  const remaining = Math.max(0, SPLASH_MIN_DURATION - elapsed);
+  setTimeout(() => {
+    splash.classList.add('splash-fade-out');
+    setTimeout(() => {
+      splash.style.display = 'none';
+    }, 550);
+  }, remaining);
+}
 
 // DOM AUTH
 const authScreen = document.getElementById('authScreen');
@@ -75,6 +90,13 @@ const msgDetailTo = document.getElementById('msgDetailTo');
 const msgDetailDate = document.getElementById('msgDetailDate');
 const msgDetailBody = document.getElementById('msgDetailBody');
 
+// DOM DELETE MODAL
+const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+const deleteConfirmBackdrop = document.getElementById('deleteConfirmBackdrop');
+const deleteTargetAddress = document.getElementById('deleteTargetAddress');
+const btnCancelDelete = document.getElementById('btnCancelDelete');
+const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+
 // TOAST
 const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
@@ -86,6 +108,88 @@ let currentMessages = [];
 let activeFilter = 'all'; // 'all' yoki email address
 let activeDomain = 'bombaclat.uz';
 let syncInterval = null;
+let emailToDelete = null;
+
+// SKELETON LOADERS
+function renderEmailsSkeleton() {
+  if (!emailsListContainer) return;
+  emailsListContainer.innerHTML = Array(4).fill(0).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-info">
+        <div class="skeleton-line skeleton-addr"></div>
+        <div class="skeleton-line skeleton-sub"></div>
+      </div>
+      <div class="skeleton-badge"></div>
+    </div>
+  `).join('');
+}
+
+function renderMessagesSkeleton() {
+  if (!messagesListContainer) return;
+  messagesListContainer.innerHTML = Array(5).fill(0).map(() => `
+    <div class="skeleton-msg-row">
+      <div class="skeleton-check"></div>
+      <div class="skeleton-sender"></div>
+      <div class="skeleton-snippet"></div>
+      <div class="skeleton-time"></div>
+    </div>
+  `).join('');
+}
+
+// DELETE MODAL ACTIONS
+window.openDeleteModal = function(address, event) {
+  if (event) event.stopPropagation();
+  emailToDelete = address;
+  if (deleteTargetAddress) deleteTargetAddress.textContent = address;
+  if (deleteConfirmModal) deleteConfirmModal.classList.remove('hidden');
+};
+
+function closeDeleteModal() {
+  emailToDelete = null;
+  if (deleteConfirmModal) deleteConfirmModal.classList.add('hidden');
+}
+
+if (btnCancelDelete) btnCancelDelete.addEventListener('click', closeDeleteModal);
+if (deleteConfirmBackdrop) deleteConfirmBackdrop.addEventListener('click', closeDeleteModal);
+
+if (btnConfirmDelete) {
+  btnConfirmDelete.addEventListener('click', async () => {
+    if (!emailToDelete || !currentUser) return;
+    const targetAddress = emailToDelete;
+    setButtonLoading(btnConfirmDelete, true, 'Oʻchirilmoqda...');
+
+    try {
+      const res = await fetch('/api/delete-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ address: targetAddress })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        currentEmails = currentEmails.filter(e => e.address !== targetAddress);
+        if (activeFilter === targetAddress) {
+          activeFilter = 'all';
+        }
+        closeDeleteModal();
+        renderEmails();
+        renderInboxTabs();
+        loadMessages();
+        showToast(`Email bazadan butunlay oʻchirildi`);
+      } else {
+        showToast(data.error || 'Emailni oʻchirishda xatolik');
+      }
+    } catch (err) {
+      showToast('Tarmoq xatosi');
+    } finally {
+      setButtonLoading(btnConfirmDelete, false, 'Ha, butunlay oʻchirilsin');
+    }
+  });
+}
 
 // ==========================================
 // 1. AUTH TABS
@@ -125,6 +229,7 @@ function checkSession() {
     localStorage.removeItem(STORAGE_KEY_AUTH);
   }
   showAuth();
+  dismissSplashScreen();
 }
 
 function saveSession(user, token) {
@@ -276,6 +381,10 @@ formRegister.addEventListener('submit', async (e) => {
 
 async function loadEmails() {
   if (!currentUser) return;
+  if (currentEmails.length === 0) {
+    renderEmailsSkeleton();
+    renderMessagesSkeleton();
+  }
 
   try {
     const res = await fetch('/api/get-emails', {
@@ -295,6 +404,8 @@ async function loadEmails() {
     }
   } catch (err) {
     console.warn('Load emails failed:', err);
+  } finally {
+    dismissSplashScreen();
   }
 }
 
@@ -394,7 +505,7 @@ function renderEmails() {
         </div>
         <div class="email-card-actions">
           <button class="btn-card-copy" onclick="copyToClipboard('${item.address}', event)" title="Nusxalash">copy</button>
-          <button class="btn-card-del" onclick="hideEmail('${item.address}', event)" title="Yashirish">&times;</button>
+          <button class="btn-card-del" onclick="openDeleteModal('${escapeHtml(item.address)}', event)" title="Oʻchirib tashlash">&times;</button>
         </div>
       </div>
     `;
@@ -442,6 +553,9 @@ window.selectEmailTab = function(address) {
 
 async function loadMessages() {
   if (!currentUser) return;
+  if (currentMessages.length === 0) {
+    renderMessagesSkeleton();
+  }
 
   try {
     const url = `/api/get-messages?email=${encodeURIComponent(activeFilter)}`;

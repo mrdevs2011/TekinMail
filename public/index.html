@@ -11,6 +11,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- 0. SPLASH SCREEN (MANDATORY 2-SECOND SILKY INTRO) -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-content">
+      <div class="splash-logo-wrap">
+        <div class="splash-pulse-ring"></div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+          <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                stroke="#FFFFFF" 
+                stroke-width="1.8" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="splash-brand-title">TekinMail</div>
+      <div class="splash-brand-subtitle">@bombaclat.uz</div>
+      <div class="splash-progress-track">
+        <div class="splash-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="app-root">
     <!-- TOP HEADER -->
     <header class="top-nav hidden" id="topNav">
@@ -295,6 +317,14 @@
                   <span>Yangi xat keldi: <strong>Claude (OTP: 849201)</strong></span>
                 </div>
               </div>
+            </div>
+
+            <!-- VIRTUAL OS CURSOR (SIMULATES REAL HUMAN USING THE APP) -->
+            <div class="virtual-cursor" id="virtualCursor">
+              <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L8 22L11.5 14L19 11L1 1Z" fill="#FFFFFF" stroke="#000000" stroke-width="1.8" stroke-linejoin="round"/>
+              </svg>
+              <span class="cursor-ripple"></span>
             </div>
           </div>
         </div>
@@ -616,6 +646,32 @@
           <button id="btnCloseMsgDetail" class="btn-modal-close">&times;</button>
         </div>
         <div class="msg-detail-body" id="msgDetailBody"></div>
+      </div>
+    </div>
+
+    <!-- DELETE EMAIL CONFIRMATION MODAL -->
+    <div id="deleteConfirmModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="deleteConfirmBackdrop"></div>
+      <div class="modal-card">
+        <div class="modal-alert-header">
+          <div class="modal-alert-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Emailni oʻchirib tashlash</h3>
+            <p class="modal-sub">Ushbu emailni bazadan butunlay oʻchirishni xohlaysizmi?</p>
+          </div>
+        </div>
+        <div class="delete-target-preview" id="deleteTargetAddress">user@bombaclat.uz</div>
+        <p class="delete-warning-text">⚠️ Ushbu manzilga kelgan barcha xabarlar va tasdiqlash kodlari ham bazadan butunlay oʻchib ketadi.</p>
+        <div class="modal-btns">
+          <button type="button" id="btnCancelDelete" class="btn-modal-cancel">Bekor qilish</button>
+          <button type="button" id="btnConfirmDelete" class="btn-modal-danger">Ha, butunlay oʻchirilsin</button>
+        </div>
       </div>
     </div>
 
