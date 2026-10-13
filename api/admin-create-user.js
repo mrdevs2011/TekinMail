@@ -1,11 +1,10 @@
 import { getSupabase } from './_supabase.js';
+import { setCors, handleOptions } from './_cors.js';
 import { requireAdmin, usernameToEmail } from './_auth.js';
 import { writeAudit, getClientIp } from './_audit.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCors(req, res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -36,8 +35,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Username kamida 3 ta belgi (harflar, raqamlar, _, .)' });
     }
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, error: 'Parol kamida 6 ta belgi bo\u2018lishi kerak' });
+    if (!password || password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Parol kamida 8 ta belgi bo\u2018lishi kerak' });
     }
 
     const email = usernameToEmail(rawUsername);

@@ -1,12 +1,11 @@
 import { getSupabase } from './_supabase.js';
+import { setCors, handleOptions } from './_cors.js';
 import { verifySessionToken } from './_auth.js';
 
 const DOMAIN = process.env.MAIL_DOMAIN || 'bombaclat.uz';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCors(req, res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

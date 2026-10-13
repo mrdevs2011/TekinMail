@@ -38,6 +38,15 @@ CREATE TABLE IF NOT EXISTS public.messages (
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_emails_user_id ON public.emails(user_id);
 CREATE INDEX IF NOT EXISTS idx_emails_address ON public.emails(address);
+
+-- Manzil unique (bir email faqat bitta userga)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'emails_address_unique'
+  ) THEN
+    ALTER TABLE public.emails ADD CONSTRAINT emails_address_unique UNIQUE (address);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_messages_user_id ON public.messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_email_address ON public.messages(email_address);
 

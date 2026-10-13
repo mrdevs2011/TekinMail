@@ -31,6 +31,7 @@ const btnLogout = document.getElementById('btnLogout');
 const formLogin = document.getElementById('formLogin');
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
+const btnLoginSubmit = document.getElementById('btnLoginSubmit');
 
 // DOM WORKSPACE - EMAILS
 const btnAddOne = document.getElementById('btnAddOne');
@@ -399,6 +400,11 @@ async function loadEmails() {
     });
     const data = await res.json();
 
+    if (res.status === 401) {
+      logout();
+      showToast('Sessiya muddati tugadi. Qayta kiring.');
+      return;
+    }
     if (data.success) {
       currentEmails = data.emails || [];
       activeDomain = (data.domain && !data.domain.includes('tekinmail')) ? data.domain : 'bombaclat.uz';
@@ -571,6 +577,11 @@ async function loadMessages() {
     });
     const data = await res.json();
 
+    if (res.status === 401) {
+      logout();
+      showToast('Sessiya muddati tugadi. Qayta kiring.');
+      return;
+    }
     if (data.success) {
       currentMessages = data.messages || [];
       renderMessages();

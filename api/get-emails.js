@@ -1,23 +1,26 @@
 import { getSupabase } from './_supabase.js';
 import { verifySessionToken } from './_auth.js';
+import { setCors, handleOptions } from './_cors.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCors(req, res, 'GET, OPTIONS');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return handleOptions(req, res, 'GET, OPTIONS');
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
     const supabase = getSupabase();
     const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '') || req.query.token;
+    const token = authHeader.replace(/^Bearer\s+/i, '') || req.query?.token;
 
     const session = await verifySessionToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
+      return res.status(401).json({ success: false, error: 'Avtorizatsiyadan o\u02bbtmagan' });
     }
 
     const { data: emails, error } = await supabase
@@ -37,6 +40,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    console.error('[get-emails]', err.message);
+    return res.status(500).json({ success: false, error: err.message || 'Server xatoligi' });
   }
 }

@@ -1,14 +1,13 @@
 import { getSupabase } from './_supabase.js';
 import { requireAdmin } from './_auth.js';
 import { writeAudit, getClientIp } from './_audit.js';
+import { setCors, handleOptions } from './_cors.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCors(req, res, 'POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return handleOptions(req, res, 'POST, OPTIONS');
   }
 
   if (req.method !== 'POST') {
@@ -22,50 +21,56 @@ export default async function handler(req, res) {
 
     let body = req.body;
     if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) { body = {}; }
+      try { body = JSON.parse(body); } catch { body = {}; }
     }
 
     const targetUserId = body?.user_id || body?.userId;
-    if (!targetUserId) {
-      return res.status(400).json({ success: false, error: 'Foydalanuvchi ID koʻrsatilmadi' });
+    if (!targetUserId || typeof targetUserId !== 'string') {
+      return res.status(400).json({ success: false, error: 'Foydalanuvchi ID ko\u02bbrsatilmadi' });
     }
 
-    // Admin o'z akkauntini o'chira olmaydi
     if (targetUserId === admin.userId) {
-      return res.status(400).json({ success: false, error: 'Oʻz admin akkauntingizni oʻchira olmaysiz' });
+      return res.status(400).json({ success: false, error: 'O\u02bbz admin akkauntingizni o\u02bbchira olmaysiz' });
     }
 
-    // 1. Foydalanuvchining xabarlarini tozalash
-    await supabase
-      .from('messages')
-      .delete()
-      .eq('user_id', targetUserId);
+    // Cascade: messages → emails → public.users → auth.users
+    await supabase.from('messages').delete().eq('user_id', targetUserId);
+    await supabase.from('emails').delete().eq('user_id', targetUserId);
 
-    // 2. Foydalanuvchining pochtalarini tozalash
-    await supabase
-      .from('emails')
-      .delete()
-      .eq('user_id', targetUserId);
-
-    // 3. Foydalanuvchini o'zini o'chirish
     const { error: delErr } = await supabase
       .from('users')
       .delete()
       .eq('id', targetUserId);
 
     if (delErr) {
-      return res.status(500).json({ success: false, error: 'Foydalanuvchini oʻchirishda xatolik: ' + delErr.message });
+      return res.status(500).json({
+        success: false,
+        error: 'Foydalanuvchini o\u02bbchirishda xatolik: ' + delErr.message
+      });
     }
 
-    await writeAudit('user_deleted', { userId: admin.userId, username: admin.username, ip: getClientIp(req), target: targetUserId });
+    // Auth user ni ham o\u02bbchirish (orphan qoldirmaslik)
+    try {
+      await supabase.auth.admin.deleteUser(targetUserId);
+    } catch (authDelErr) {
+      console.error('[admin-delete-user] auth delete:', authDelErr?.message);
+    }
+
+    await writeAudit('user_deleted', {
+      userId: admin.userId,
+      username: admin.username,
+      ip: getClientIp(req),
+      target: targetUserId
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'Foydalanuvchi va uning barcha pochtalari muvaffaqiyatli oʻchirildi',
+      message: 'Foydalanuvchi va uning barcha pochtalari muvaffaqiyatli o\u02bbchirildi',
       deleted_user_id: targetUserId
     });
 
   } catch (err) {
+    console.error('[admin-delete-user]', err.message);
     return res.status(500).json({ success: false, error: err.message || 'Server xatoligi' });
   }
 }

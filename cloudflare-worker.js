@@ -6,10 +6,8 @@ export default {
       const subject = message.headers.get('subject') || 'No Subject';
       const fromName = message.headers.get('from') || from;
 
-      // Xatning to'liq xom matnini o'qish
       const rawText = await new Response(message.raw).text();
 
-      // Xat tanasi (body) ajratish
       let bodyText = '';
       const splitBody = rawText.split(/\r?\n\r?\n/);
       if (splitBody.length > 1) {
@@ -18,19 +16,22 @@ export default {
         bodyText = rawText;
       }
 
-      // TekinMail Vercel API'ga yuborish
       const targetApiUrl = env.TEKINMAIL_API_URL || 'https://tekinmail.vercel.app/api/incoming-email';
+      const headers = { 'Content-Type': 'application/json' };
+
+      // WEBHOOK_SECRET Cloudflare Worker env da sozlang
+      if (env.WEBHOOK_SECRET) {
+        headers['X-Webhook-Secret'] = env.WEBHOOK_SECRET;
+      }
 
       const res = await fetch(targetApiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
-          to: to,
-          from: from,
+          to,
+          from,
           from_name: fromName,
-          subject: subject,
+          subject,
           raw: rawText,
           body: bodyText,
           html: ''

@@ -26,17 +26,3 @@ export function getClientIp(req) {
   );
 }
 
-export function setCors(res) {
-  const allowed = [
-    'https://bombaclat.uz',
-    'https://www.bombaclat.uz',
-    'https://tekinmail.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:5173'
-  ];
-  // Oddiy: ruxsat etilgan originlarni qabul qilamiz
-  // (aniq origin tekshiruvi keyinroq qattiqroq qilinishi mumkin)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Webhook-Secret');
-}
