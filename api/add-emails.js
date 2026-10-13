@@ -1,7 +1,7 @@
 import { getSupabase } from './_supabase.js';
 import { verifySessionToken } from './_auth.js';
 
-const DOMAIN = 'tekinmail.abrdns.com';
+const DOMAIN = process.env.MAIL_DOMAIN || 'tekinmail.uz';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

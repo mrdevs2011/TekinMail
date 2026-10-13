@@ -42,6 +42,7 @@ const cooldownTimerDisplay = document.getElementById('cooldownTimerDisplay');
 const emailsList = document.getElementById('emailsList');
 const emailsCount = document.getElementById('emailsCount');
 const emailSearch = document.getElementById('emailSearch');
+const domainBadge = document.getElementById('domainBadge');
 
 const toast = document.getElementById('toast');
 const toastText = document.getElementById('toastText');
@@ -283,6 +284,9 @@ async function loadUserEmails() {
     const data = await res.json();
 
     if (data.success) {
+      if (data.domain && domainBadge) {
+        domainBadge.textContent = '@' + data.domain;
+      }
       currentEmails = data.emails || [];
       renderEmails();
     }
