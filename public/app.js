@@ -137,6 +137,8 @@ function applyDomainToWorkspace() {
   });
 }
 
+let messagesHydrated = false;
+let emailsHydrated = false;
 let syncInterval = null;
 let emailToDelete = null;
 
@@ -260,6 +262,8 @@ function saveSession(user, token) {
 }
 
 function logout() {
+  messagesHydrated = false;
+  emailsHydrated = false;
   localStorage.removeItem(STORAGE_KEY_AUTH);
   currentUser = null;
   currentEmails = [];
@@ -423,11 +427,12 @@ formLogin.addEventListener('submit', async (e) => {
 // 3. EMAILS & ADD +1 LOGIC
 // ==========================================
 
-async function loadEmails() {
+async function loadEmails(opts = {}) {
   if (!currentUser) return;
-  if (currentEmails.length === 0) {
+  const silent = Boolean(opts.silent);
+
+  if (!emailsHydrated && !silent) {
     renderEmailsSkeleton();
-    renderMessagesSkeleton();
   }
 
   try {
@@ -443,14 +448,16 @@ async function loadEmails() {
     }
     if (data.success) {
       currentEmails = data.emails || [];
+      emailsHydrated = true;
       activeDomain = (data.domain || '').trim().toLowerCase();
       applyDomainToWorkspace();
       renderEmails();
       renderInboxTabs();
-      loadMessages();
+      loadMessages({ silent });
     }
   } catch (err) {
     console.warn('Load emails failed:', err);
+    emailsHydrated = true;
   } finally {
     dismissSplashScreen();
   }
@@ -592,7 +599,8 @@ window.selectEmailTab = function(address) {
   activeFilter = address;
   renderInboxTabs();
   renderEmails(); // Chap tomonda tanlangan kartani ajratib ko'rsatish
-  loadMessages();
+  messagesHydrated = true; // filter o'zgardi — skeleton emas, lekin majburiy paint
+  loadMessages({ force: true });
   if (window.innerWidth <= 768) {
     switchMobileView('inbox');
   }
@@ -611,8 +619,8 @@ async function loadMessages(opts = {}) {
   const force = Boolean(opts.force);
   const silent = Boolean(opts.silent);
 
-  // Faqat birinchi yuklashda skeleton (fon polling da emas)
-  if (!silent && currentMessages.length === 0) {
+  // Skeleton faqat eng birinchi yuklashda — polling da hech qachon
+  if (!messagesHydrated && !silent) {
     renderMessagesSkeleton();
   }
 
@@ -632,13 +640,18 @@ async function loadMessages(opts = {}) {
       const next = data.messages || [];
       const prevSig = messagesSignature(currentMessages);
       const nextSig = messagesSignature(next);
-      // O'zgarish yo'q — UI ni qayta chizmaymiz
-      if (!force && prevSig === nextSig) return;
+      const firstPaint = !messagesHydrated;
+      messagesHydrated = true;
+      if (!force && !firstPaint && prevSig === nextSig) return;
       currentMessages = next;
       renderMessages();
     }
   } catch (err) {
     console.warn('Load messages failed:', err);
+    if (!messagesHydrated) {
+      messagesHydrated = true;
+      renderMessages();
+    }
   }
 }
 
@@ -803,7 +816,7 @@ function startSync() {
     if (currentUser) {
       loadMessages({ silent: true });
     }
-  }, 12000);
+  }, 15000);
 }
 
 // ==========================================
