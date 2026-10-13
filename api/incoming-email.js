@@ -133,7 +133,8 @@ export default async function handler(req, res) {
 
     const to_email = (body?.to || body?.recipient || body?.email_address || '').trim().toLowerCase();
     let from_name = decodeMimeHeader(body?.from_name || body?.sender_name || '');
-    let from_address = body?.from || body?.from_address || 'no-reply@bombaclat.uz';
+    const _fallbackDomain = (process.env.MAIL_DOMAIN || 'mail.local').trim().toLowerCase();
+    let from_address = body?.from || body?.from_address || `no-reply@${_fallbackDomain}`;
     let subject = decodeMimeHeader(body?.subject || 'Mavzusiz');
 
     // MIME va HTML/Plain textni 1:1 mukammal ajratish

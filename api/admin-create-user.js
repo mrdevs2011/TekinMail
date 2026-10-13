@@ -81,14 +81,16 @@ export default async function handler(req, res) {
       console.error('Profile insert error:', profileErr.message);
     }
 
-    // Dastlabki email manzil
-    const domain = process.env.MAIL_DOMAIN || 'bombaclat.uz';
-    const initialAddress = `${rawUsername}@${domain}`;
-    await supabase.from('emails').insert([{
-      user_id: newAuthUser.id,
-      address: initialAddress,
-      token: 'tk_' + Math.random().toString(36).substring(2)
-    }]);
+    // Dastlabki email manzil (faqat MAIL_DOMAIN sozlangan bo'lsa)
+    const domain = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
+    if (domain) {
+      const initialAddress = `${rawUsername}@${domain}`;
+      await supabase.from('emails').insert([{
+        user_id: newAuthUser.id,
+        address: initialAddress,
+        token: 'tk_' + Math.random().toString(36).substring(2)
+      }]);
+    }
 
     await writeAudit('user_created', { userId: admin.userId, username: admin.username, ip: getClientIp(req), target: rawUsername });
 

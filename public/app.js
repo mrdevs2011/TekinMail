@@ -101,7 +101,29 @@ let currentUser = null; // { id, full_name, username, token, is_admin }
 let currentEmails = [];
 let currentMessages = [];
 let activeFilter = 'all'; // 'all' yoki email address
-let activeDomain = 'bombaclat.uz';
+let activeDomain = '';
+
+// Public config (MAIL_DOMAIN from server)
+async function loadPublicConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if (data.success && data.domain) {
+      activeDomain = data.domain;
+      document.querySelectorAll('[data-mail-domain]').forEach(el => {
+        const prefix = el.getAttribute('data-mail-prefix') || '';
+        const fmt = el.getAttribute('data-mail-format') || 'at';
+        if (fmt === 'at') el.textContent = prefix ? prefix + '@' + activeDomain : '@' + activeDomain;
+        else if (fmt === 'email') el.textContent = (prefix || 'user') + '@' + activeDomain;
+        else el.textContent = activeDomain;
+      });
+      if (domainSuffixLabel) domainSuffixLabel.textContent = '@' + activeDomain;
+    }
+  } catch (e) {
+    console.warn('config load failed', e);
+  }
+}
+
 let syncInterval = null;
 let emailToDelete = null;
 
@@ -407,7 +429,7 @@ async function loadEmails() {
     }
     if (data.success) {
       currentEmails = data.emails || [];
-      activeDomain = (data.domain && !data.domain.includes('tekinmail')) ? data.domain : 'bombaclat.uz';
+      activeDomain = (data.domain || '').trim().toLowerCase();
       if (domainSuffixLabel) {
         domainSuffixLabel.textContent = '@' + activeDomain;
       }
@@ -1125,5 +1147,4 @@ window.adminViewMessage = function(msgId) {
 };
 
 // BOOTSTRAP
-checkSession();
-
+loadPublicConfig().finally(() => checkSession());

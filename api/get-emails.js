@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      domain: process.env.MAIL_DOMAIN || 'bombaclat.uz',
+      domain: (process.env.MAIL_DOMAIN || '').trim().toLowerCase(),
       emails: emails || []
     });
 

@@ -2,7 +2,7 @@ import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
 import { verifySessionToken } from './_auth.js';
 
-const DOMAIN = process.env.MAIL_DOMAIN || 'bombaclat.uz';
+const DOMAIN = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
 
 export default async function handler(req, res) {
   setCors(req, res);
@@ -28,6 +28,10 @@ export default async function handler(req, res) {
     const session = await verifySessionToken(token);
     if (!session) {
       return res.status(401).json({ success: false, error: 'Avtorizatsiyadan oʻtmagan' });
+    }
+
+    if (!DOMAIN) {
+      return res.status(500).json({ success: false, error: 'MAIL_DOMAIN sozlanmagan. Vercel Environment Variables da qoʻshing.' });
     }
 
     let customPrefix = (body?.prefix || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
