@@ -42,14 +42,436 @@
       </div>
     </header>
 
-    <!-- 1. AUTH SCREEN (DESKTOP: LEFT LOGIN, RIGHT SHOWCASE ADS VIDEO LOOP) -->
-    <main id="authScreen" class="auth-wrap">
-      <!-- LEFT PANE: LOGIN / REGISTER CARD -->
-      <div class="auth-left-pane">
-        <div class="auth-box">
-          <div class="auth-card-head">
-            <div class="auth-badge-icon">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 1. AUTH & LANDING SCREEN (CLAUDE-STYLE FULL LANDING + 50/50 AUTH) -->
+    <main id="authScreen" class="landing-screen">
+      <!-- LANDING TOP NAVIGATION BAR -->
+      <header class="landing-nav">
+        <div class="landing-nav-brand">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+            <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                  stroke="#FFFFFF" 
+                  stroke-width="1.8" 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round"/>
+          </svg>
+          <span class="landing-brand-name">TekinMail</span>
+          <span class="landing-domain-badge">@bombaclat.uz</span>
+        </div>
+        <nav class="landing-nav-menu">
+          <a href="#howItWorks" class="landing-nav-link">Qoʻllanma</a>
+          <a href="#features" class="landing-nav-link">Imkoniyatlar</a>
+          <a href="#faq" class="landing-nav-link">Savollar</a>
+          <button type="button" class="landing-nav-cta" onclick="scrollToAuthBox()">Tizimga kirish</button>
+        </nav>
+      </header>
+
+      <!-- HERO / AUTH SECTION -->
+      <section class="landing-hero" id="heroAuth">
+        <!-- LEFT: HEADLINE & AUTH CARD -->
+        <div class="hero-left-pane">
+          <div class="hero-intro">
+            <div class="hero-badge">
+              <span class="hero-badge-dot"></span>
+              <span>Vaqtinchalik va xavfsiz elektron pochta</span>
+            </div>
+            <h1 class="hero-headline">
+              Cheksiz vaqtinchalik emaillar. <br>
+              <span class="hero-headline-accent">Bir zumda, bitta joyda.</span>
+            </h1>
+            <p class="hero-description">
+              Shaxsiy pochtangizni spamdan asrang. Root hisob ochib, istalgancha <strong>@bombaclat.uz</strong> manzillarini yarating va barcha tasdiqlash kodlarini (OTP) qabul qiling.
+            </p>
+          </div>
+
+          <!-- AUTH CARD -->
+          <div class="auth-box" id="authCardBox">
+            <div class="auth-card-head">
+              <div class="auth-badge-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+                  <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                        stroke="#FFFFFF" 
+                        stroke-width="1.8" 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h2 class="auth-card-title">TekinMail Boshqaruvi</h2>
+              <p class="auth-card-desc">Root hisobingizga kiring yoki yangisini oching</p>
+            </div>
+
+            <div class="auth-tabs">
+              <button id="tabLogin" class="auth-tab active" type="button">Kirish</button>
+              <button id="tabRegister" class="auth-tab" type="button">Ro'yxatdan o'tish</button>
+            </div>
+
+            <!-- LOGIN FORMA -->
+            <form id="formLogin" class="auth-form-body">
+              <div class="form-group">
+                <label for="loginUsername">Foydalanuvchi nomi (Username)</label>
+                <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
+              </div>
+              <div class="form-group">
+                <label for="loginPassword">Parol</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
+              </div>
+              <button type="submit" id="btnLoginSubmit" class="btn-primary-auth">Tizimga kirish</button>
+            </form>
+
+            <!-- REGISTER FORMA -->
+            <form id="formRegister" class="auth-form-body hidden">
+              <div class="form-group">
+                <label for="regFullName">To'liq ism (Ism Familiya)</label>
+                <input type="text" id="regFullName" placeholder="Muhammadrasul Qosimov" required>
+              </div>
+              <div class="form-group">
+                <label for="regUsername">Username</label>
+                <input type="text" id="regUsername" placeholder="bymrdev" required>
+              </div>
+              <div class="form-group">
+                <label for="regPassword">Parol</label>
+                <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." required>
+              </div>
+              <button type="submit" id="btnRegisterSubmit" class="btn-primary-auth">Root akkaunt yaratish</button>
+            </form>
+
+            <div class="auth-footer-note">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>Root hisob uchun tashqi email yoki raqam talab qilinmaydi</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT (DESKTOP) / DIRECTLY BELOW ON MOBILE & TABLET: 1:1 LIVE DEMO APP PREVIEW -->
+        <div class="hero-right-pane">
+          <div class="auth-showcase-box">
+            <!-- MINI TOP NAV BAR (1:1 REAL APP) -->
+            <div class="mini-top-nav">
+              <div class="mini-window-dots">
+                <span class="mini-dot"></span>
+                <span class="mini-dot"></span>
+                <span class="mini-dot"></span>
+              </div>
+              <div class="mini-nav-brand">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+                  <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                        stroke="#FFFFFF" 
+                        stroke-width="1.8" 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round"/>
+                </svg>
+                <span class="mini-brand-title">TekinMail</span>
+              </div>
+              <div class="mini-profile-badge">
+                <span class="mini-profile-name">Muhammadrasul</span>
+                <span class="mini-profile-handle">@bymrdev</span>
+                <span class="mini-live-dot" title="Jonli ko'rsatuv"></span>
+              </div>
+            </div>
+
+            <!-- MINI 2-COLUMN WORKSPACE (1:1 REAL APP WORKSPACE) -->
+            <div class="mini-workspace">
+              <!-- MINI CHAP USTUN: EMAILS -->
+              <div class="mini-col mini-emails-col">
+                <div class="mini-col-header">
+                  <span class="mini-heading">Emails</span>
+                  <span class="mini-add-btn">ADD +1</span>
+                </div>
+                <div class="mini-search-bar">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                  </svg>
+                  <span>search emails...</span>
+                </div>
+                <div class="mini-cards-list">
+                  <!-- CARD 1 -->
+                  <div class="mini-card">
+                    <div class="mini-avatar">M</div>
+                    <div class="mini-card-info">
+                      <div class="mini-email-addr">bymrdev@bombaclat.uz</div>
+                      <div class="mini-email-owner">Muhammadrasul Qosimov</div>
+                    </div>
+                    <div class="mini-card-copy">copy</div>
+                  </div>
+
+                  <!-- CARD 2 (ACTIVE & COPY ANIMATED) -->
+                  <div class="mini-card loop-card-active">
+                    <div class="mini-avatar">C</div>
+                    <div class="mini-card-info">
+                      <div class="mini-email-addr">claude.ai@bombaclat.uz</div>
+                      <div class="mini-email-owner">Muhammadrasul Qosimov</div>
+                    </div>
+                    <div class="mini-card-copy loop-copied-pill">
+                      <span class="copy-lbl-copy">copy</span>
+                      <span class="copy-lbl-done">copied ✓</span>
+                    </div>
+                  </div>
+
+                  <!-- CARD 3 -->
+                  <div class="mini-card">
+                    <div class="mini-avatar">G</div>
+                    <div class="mini-card-info">
+                      <div class="mini-email-addr">github.dev@bombaclat.uz</div>
+                      <div class="mini-email-owner">Muhammadrasul Qosimov</div>
+                    </div>
+                    <div class="mini-card-copy">copy</div>
+                  </div>
+
+                  <!-- CARD 4 -->
+                  <div class="mini-card">
+                    <div class="mini-avatar">O</div>
+                    <div class="mini-card-info">
+                      <div class="mini-email-addr">openai.api@bombaclat.uz</div>
+                      <div class="mini-email-owner">Muhammadrasul Qosimov</div>
+                    </div>
+                    <div class="mini-card-copy">copy</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- MINI O'NG USTUN: INBOX -->
+              <div class="mini-col mini-inbox-col">
+                <div class="mini-col-header">
+                  <span class="mini-heading">Inbox</span>
+                  <svg class="mini-sync-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>
+                  </svg>
+                </div>
+
+                <!-- MINI TABS -->
+                <div class="mini-tabs-bar">
+                  <span class="mini-tab">Barchasi</span>
+                  <span class="mini-tab active">claude.ai@...</span>
+                  <span class="mini-tab">github.dev@...</span>
+                </div>
+
+                <!-- MINI MESSAGES LIST -->
+                <div class="mini-messages-list">
+                  <!-- MSG 1 (CLAUDE OTP - ARRIVES LIVE) -->
+                  <div class="mini-msg-row loop-msg-incoming">
+                    <span class="mini-check"></span>
+                    <span class="mini-sender">Anthropic / Claude</span>
+                    <span class="mini-snippet"><strong>Tasdiqlash kodi: 849201</strong> — Hisobingizni tasdiqlang...</span>
+                    <span class="mini-time">hozirgina</span>
+                    <span class="mini-star loop-star-active">★</span>
+                  </div>
+
+                  <!-- MSG 2 (OPENAI) -->
+                  <div class="mini-msg-row">
+                    <span class="mini-check"></span>
+                    <span class="mini-sender">OpenAI Auth</span>
+                    <span class="mini-snippet"><strong>Your verification code: 294012</strong> — Welcome to ChatGPT...</span>
+                    <span class="mini-time">2d oldin</span>
+                    <span class="mini-star">☆</span>
+                  </div>
+
+                  <!-- MSG 3 (GITHUB) -->
+                  <div class="mini-msg-row">
+                    <span class="mini-check"></span>
+                    <span class="mini-sender">GitHub Security</span>
+                    <span class="mini-snippet"><strong>[GitHub] Verification code: 618930</strong> — Device login...</span>
+                    <span class="mini-time">5d oldin</span>
+                    <span class="mini-star">☆</span>
+                  </div>
+
+                  <!-- MSG 4 (SUPABASE) -->
+                  <div class="mini-msg-row">
+                    <span class="mini-check"></span>
+                    <span class="mini-sender">Supabase</span>
+                    <span class="mini-snippet"><strong>Welcome to Supabase</strong> — Confirm your email...</span>
+                    <span class="mini-time">12d oldin</span>
+                    <span class="mini-star">☆</span>
+                  </div>
+                </div>
+
+                <!-- FLOATING LIVE TOAST SIMULATION -->
+                <div class="mini-floating-toast">
+                  <span class="mini-toast-badge">LIVE</span>
+                  <span>Yangi xat keldi: <strong>Claude (OTP: 849201)</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. QANDAY ISHLAYDI? (HOW IT WORKS - 3 STEP VISUAL GUIDE) -->
+      <section class="landing-section" id="howItWorks">
+        <div class="section-badge">QADAMMA-QADAM</div>
+        <h2 class="section-title">TekinMail qanday ishlaydi?</h2>
+        <p class="section-desc">Hech qanday murakkabliksiz, 3 ta oddiy qadamda toʻliq nazoratga ega boʻling</p>
+
+        <div class="steps-grid">
+          <!-- STEP 1 -->
+          <div class="step-card">
+            <div class="step-num-badge">01</div>
+            <div class="step-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </div>
+            <h3 class="step-card-title">Bir zumda email oling</h3>
+            <p class="step-card-text">
+              <strong>ADD +1</strong> tugmasini bosing yoki oʻzingiz istagan prefiksni tanlang. Tizim avtomatik ravishda yangi <strong>@bombaclat.uz</strong> manzilini tayyorlaydi.
+            </p>
+            <div class="step-pill-tag">⚡ @bombaclat.uz</div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="step-card">
+            <div class="step-num-badge">02</div>
+            <div class="step-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            </div>
+            <h3 class="step-card-title">Istalgan servisda ishlating</h3>
+            <p class="step-card-text">
+              Manzilni 1 marta bosish bilan nusxalang va Claude, ChatGPT, GitHub, Supabase yoki boshqa saytlarda roʻyxatdan oʻtishda kiriting.
+            </p>
+            <div class="step-pill-tag">📋 1-klikda nusxalash</div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="step-card">
+            <div class="step-num-badge">03</div>
+            <div class="step-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+              </svg>
+            </div>
+            <h3 class="step-card-title">Xatlar va kodlarni jonli oling</h3>
+            <p class="step-card-text">
+              Hech qanday kutishlarsiz, tasdiqlash kodlari (OTP) va xabarlar toʻgʻridan-toʻgʻri sizning yagona Inbox panelingizda real-time rejimda paydo boʻladi.
+            </p>
+            <div class="step-pill-tag">📬 Real-time Inbox</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. IMKONIYATLAR (KEY ADVANTAGES) -->
+      <section class="landing-section" id="features">
+        <div class="section-badge">AFZALLIKLAR</div>
+        <h2 class="section-title">Nima uchun aynan TekinMail?</h2>
+        <p class="section-desc">Oddiy vaqtinchalik saytlardan farqli ravishda shaxsiy boshqaruv markaziga ega boʻling</p>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <h3 class="feature-card-title">100% Anonim va Xavfsiz</h3>
+            <p class="feature-card-text">Shaxsiy telefon raqamingiz yoki emailingiz oshkor boʻlmaydi. Root akkaunt yaratishda ham tashqi maʼlumotlar talab qilinmaydi.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <h3 class="feature-card-title">Real-Time Xatlar Oqimi</h3>
+            <p class="feature-card-text">Yangi xatlar soniyalar ichida avtomatik ravishda qabul qilinadi. Sahifani qayta yangilashga hojat qolmaydi.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </div>
+            <h3 class="feature-card-title">Haqiqiy @bombaclat.uz Domeni</h3>
+            <p class="feature-card-text">Spam filtrlaridan oson oʻtuvchi haqiqiy pochta domeni. Barcha yirik xalqaro servislar (Claude, OpenAI, GitHub) tomonidan toʻliq qabul qilinadi.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <h3 class="feature-card-title">Bitta Joyda Koʻp Pochtali Boshqaruv</h3>
+            <p class="feature-card-text">Bir nechta turli manzillarni yarating va qulay filtrlar orqali har birining xatlarini alohida koʻring.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. FAQ (SAVOL-JAVOBLAR - ACCORDION LIST) -->
+      <section class="landing-section" id="faq">
+        <div class="section-badge">SAVOL-JAVOBLAR</div>
+        <h2 class="section-title">Koʻp beriladigan savollar</h2>
+        <p class="section-desc">TekinMail haqida eng koʻp soʻraladigan savollarga aniq va loʻnda javoblar</p>
+
+        <div class="faq-accordion-list">
+          <div class="faq-item" onclick="toggleFaq(this)">
+            <div class="faq-question">
+              <span>TekinMail nima va undan qanday foydalaniladi?</span>
+              <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="faq-answer">
+              <p>TekinMail — bu oʻz shaxsiy emailingizni spam va xavflardan himoya qilish uchun moʻljallangan bepul vaqtinchalik pochta boshqaruv markazidir. Root hisob ochib, bir bosishda <strong>@bombaclat.uz</strong> manzillarini yaratasiz va xatlarni qabul qilasiz.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" onclick="toggleFaq(this)">
+            <div class="faq-question">
+              <span>Qaysi sayt va platformalarda ishlatsa boʻladi?</span>
+              <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="faq-answer">
+              <p>Istalgan saytda! Claude AI, ChatGPT (OpenAI), GitHub, Supabase, Discord, Twitter va sinov uchun roʻyxatdan oʻtish talab qilinadigan barcha joylarda bemalol foydalanishingiz mumkin.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" onclick="toggleFaq(this)">
+            <div class="faq-question">
+              <span>Tasdiqlash kodlari (OTP) va xatlar qancha vaqtda yetib keladi?</span>
+              <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="faq-answer">
+              <p>Xatlar joʻnatuvchi server tomonidan yuborilishi bilan 2-5 soniya ichida Inbox panelingizda koʻrinadi. Xizmat avtomatik har 8 soniyada sinxronlanadi yoki "Yangilash" tugmasini bosishingiz mumkin.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" onclick="toggleFaq(this)">
+            <div class="faq-question">
+              <span>Root hisob ochish uchun telefon raqam yoki tashqi email kerakmi?</span>
+              <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="faq-answer">
+              <p>Yoʻq! Hech qanday tashqi email yoki telefon raqami soʻralmaydi. Faqat oʻzingiz istagan username va parol bilan toʻliq anonim va xavfsiz boshqaruv hisobini yaratasiz.</p>
+            </div>
+          </div>
+
+          <div class="faq-item" onclick="toggleFaq(this)">
+            <div class="faq-question">
+              <span>Xizmat mutlaqo bepulmi?</span>
+              <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="faq-answer">
+              <p>Ha, TekinMail 100% bepul. Hech qanday cheklovlar, yashirin toʻlovlar yoki tariflar mavjud emas.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. CLEAN ENTERPRISE FOOTER -->
+      <footer class="landing-footer">
+        <div class="footer-inner">
+          <div class="footer-col-brand">
+            <div class="footer-brand">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="12" cy="12" r="12" fill="#0284C7"/>
                 <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
                       stroke="#FFFFFF" 
@@ -57,208 +479,33 @@
                       stroke-linecap="round" 
                       stroke-linejoin="round"/>
               </svg>
+              <span class="footer-brand-title">TekinMail</span>
             </div>
-            <h2 class="auth-card-title">TekinMail</h2>
-            <p class="auth-card-desc">Root boshqaruv markaziga kirish</p>
+            <p class="footer-slogan">Xavfsiz, tezkor va cheksiz vaqtinchalik elektron pochta tizimi.</p>
+            <span class="footer-domain-badge">Rasmiy domen: @bombaclat.uz</span>
           </div>
 
-          <div class="auth-tabs">
-            <button id="tabLogin" class="auth-tab active" type="button">Kirish</button>
-            <button id="tabRegister" class="auth-tab" type="button">Ro'yxatdan o'tish</button>
-          </div>
-
-          <!-- LOGIN FORMA -->
-          <form id="formLogin" class="auth-form-body">
-            <div class="form-group">
-              <label for="loginUsername">Username</label>
-              <input type="text" id="loginUsername" placeholder="username..." autocomplete="username" required autofocus>
+          <div class="footer-links-group">
+            <div class="footer-col">
+              <span class="footer-col-heading">Tizim</span>
+              <a href="#howItWorks" class="footer-link">Qanday ishlaydi?</a>
+              <a href="#features" class="footer-link">Imkoniyatlar</a>
+              <a href="#faq" class="footer-link">Savol-javoblar</a>
             </div>
-            <div class="form-group">
-              <label for="loginPassword">Parol</label>
-              <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
-            </div>
-            <button type="submit" id="btnLoginSubmit" class="btn-primary-auth">Tizimga kirish</button>
-          </form>
-
-          <!-- REGISTER FORMA -->
-          <form id="formRegister" class="auth-form-body hidden">
-            <div class="form-group">
-              <label for="regFullName">To'liq ism (Ism Familiya)</label>
-              <input type="text" id="regFullName" placeholder="Muhammadrasul Qosimov" required>
-            </div>
-            <div class="form-group">
-              <label for="regUsername">Username</label>
-              <input type="text" id="regUsername" placeholder="bymrdev" required>
-            </div>
-            <div class="form-group">
-              <label for="regPassword">Parol</label>
-              <input type="password" id="regPassword" placeholder="kamida 4 ta belgi..." required>
-            </div>
-            <button type="submit" id="btnRegisterSubmit" class="btn-primary-auth">Root akkaunt yaratish</button>
-          </form>
-
-          <div class="auth-footer-note">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span>Root hisob uchun tashqi email yoki raqam talab qilinmaydi</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT PANE: 1:1 MINI TEKINMAIL APP LIVE DEMO PREVIEW (DESKTOP ONLY) -->
-      <div class="auth-right-pane">
-        <div class="auth-showcase-box">
-          <!-- MINI TOP NAV BAR (1:1 REAL APP) -->
-          <div class="mini-top-nav">
-            <div class="mini-window-dots">
-              <span class="mini-dot"></span>
-              <span class="mini-dot"></span>
-              <span class="mini-dot"></span>
-            </div>
-            <div class="mini-nav-brand">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="12" fill="#0284C7"/>
-                <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
-                      stroke="#FFFFFF" 
-                      stroke-width="1.8" 
-                      stroke-linecap="round" 
-                      stroke-linejoin="round"/>
-              </svg>
-              <span class="mini-brand-title">TekinMail</span>
-            </div>
-            <div class="mini-profile-badge">
-              <span class="mini-profile-name">Muhammadrasul</span>
-              <span class="mini-profile-handle">@bymrdev</span>
-              <span class="mini-live-dot" title="Jonli ko'rsatuv"></span>
-            </div>
-          </div>
-
-          <!-- MINI 2-COLUMN WORKSPACE (1:1 REAL APP WORKSPACE) -->
-          <div class="mini-workspace">
-            <!-- MINI CHAP USTUN: EMAILS -->
-            <div class="mini-col mini-emails-col">
-              <div class="mini-col-header">
-                <span class="mini-heading">Emails</span>
-                <span class="mini-add-btn">ADD +1</span>
-              </div>
-              <div class="mini-search-bar">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                </svg>
-                <span>search emails...</span>
-              </div>
-              <div class="mini-cards-list">
-                <!-- CARD 1 -->
-                <div class="mini-card">
-                  <div class="mini-avatar">M</div>
-                  <div class="mini-card-info">
-                    <div class="mini-email-addr">bymrdev@bombaclat.uz</div>
-                    <div class="mini-email-owner">Muhammadrasul Qosimov</div>
-                  </div>
-                  <div class="mini-card-copy">copy</div>
-                </div>
-
-                <!-- CARD 2 (ACTIVE & COPY ANIMATED) -->
-                <div class="mini-card loop-card-active">
-                  <div class="mini-avatar">C</div>
-                  <div class="mini-card-info">
-                    <div class="mini-email-addr">claude.ai@bombaclat.uz</div>
-                    <div class="mini-email-owner">Muhammadrasul Qosimov</div>
-                  </div>
-                  <div class="mini-card-copy loop-copied-pill">
-                    <span class="copy-lbl-copy">copy</span>
-                    <span class="copy-lbl-done">copied ✓</span>
-                  </div>
-                </div>
-
-                <!-- CARD 3 -->
-                <div class="mini-card">
-                  <div class="mini-avatar">G</div>
-                  <div class="mini-card-info">
-                    <div class="mini-email-addr">github.dev@bombaclat.uz</div>
-                    <div class="mini-email-owner">Muhammadrasul Qosimov</div>
-                  </div>
-                  <div class="mini-card-copy">copy</div>
-                </div>
-
-                <!-- CARD 4 -->
-                <div class="mini-card">
-                  <div class="mini-avatar">O</div>
-                  <div class="mini-card-info">
-                    <div class="mini-email-addr">openai.api@bombaclat.uz</div>
-                    <div class="mini-email-owner">Muhammadrasul Qosimov</div>
-                  </div>
-                  <div class="mini-card-copy">copy</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- MINI O'NG USTUN: INBOX -->
-            <div class="mini-col mini-inbox-col">
-              <div class="mini-col-header">
-                <span class="mini-heading">Inbox</span>
-                <svg class="mini-sync-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>
-                </svg>
-              </div>
-
-              <!-- MINI TABS -->
-              <div class="mini-tabs-bar">
-                <span class="mini-tab">Barchasi</span>
-                <span class="mini-tab active">claude.ai@...</span>
-                <span class="mini-tab">github.dev@...</span>
-              </div>
-
-              <!-- MINI MESSAGES LIST -->
-              <div class="mini-messages-list">
-                <!-- MSG 1 (CLAUDE OTP - ARRIVES LIVE) -->
-                <div class="mini-msg-row loop-msg-incoming">
-                  <span class="mini-check"></span>
-                  <span class="mini-sender">Anthropic / Claude</span>
-                  <span class="mini-snippet"><strong>Tasdiqlash kodi: 849201</strong> — Hisobingizni tasdiqlang...</span>
-                  <span class="mini-time">hozirgina</span>
-                  <span class="mini-star loop-star-active">★</span>
-                </div>
-
-                <!-- MSG 2 (OPENAI) -->
-                <div class="mini-msg-row">
-                  <span class="mini-check"></span>
-                  <span class="mini-sender">OpenAI Auth</span>
-                  <span class="mini-snippet"><strong>Your verification code: 294012</strong> — Welcome to ChatGPT...</span>
-                  <span class="mini-time">2d oldin</span>
-                  <span class="mini-star">☆</span>
-                </div>
-
-                <!-- MSG 3 (GITHUB) -->
-                <div class="mini-msg-row">
-                  <span class="mini-check"></span>
-                  <span class="mini-sender">GitHub Security</span>
-                  <span class="mini-snippet"><strong>[GitHub] Verification code: 618930</strong> — Device login...</span>
-                  <span class="mini-time">5d oldin</span>
-                  <span class="mini-star">☆</span>
-                </div>
-
-                <!-- MSG 4 (SUPABASE) -->
-                <div class="mini-msg-row">
-                  <span class="mini-check"></span>
-                  <span class="mini-sender">Supabase</span>
-                  <span class="mini-snippet"><strong>Welcome to Supabase</strong> — Confirm your email...</span>
-                  <span class="mini-time">12d oldin</span>
-                  <span class="mini-star">☆</span>
-                </div>
-              </div>
-
-              <!-- FLOATING LIVE TOAST SIMULATION -->
-              <div class="mini-floating-toast">
-                <span class="mini-toast-badge">LIVE</span>
-                <span>Yangi xat keldi: <strong>Claude (OTP: 849201)</strong></span>
-              </div>
+            <div class="footer-col">
+              <span class="footer-col-heading">Xavfsizlik</span>
+              <span class="footer-static-text">100% Anonim</span>
+              <span class="footer-static-text">Telefon raqamsiz</span>
+              <span class="footer-static-text">Spamdan himoya</span>
             </div>
           </div>
         </div>
-      </div>
+
+        <div class="footer-bottom">
+          <span>© 2026 TekinMail. Barcha huquqlar himoyalangan.</span>
+          <span class="footer-creator">Yaratuvchi: Muhammadrasul Qosimov (@bymrdev)</span>
+        </div>
+      </footer>
     </main>
 
     <!-- 2. MAIN WORKSPACE (ESKIZDAGI 2 USTUNLI PANEL) -->

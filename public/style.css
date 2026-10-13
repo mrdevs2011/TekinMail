@@ -51,6 +51,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--bg-main);
   background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 255, 255, 0.03), transparent);
@@ -59,8 +63,9 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 16px 20px;
+  padding: 0 20px 40px;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 .app-root {
@@ -68,17 +73,16 @@ body {
   max-width: 1280px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
 
 /* ========================================================
-   TOP NAVBAR
+   TOP NAVBAR (WORKSPACE HEADER - HIDDEN ON LANDING)
    ======================================================== */
 .top-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0 10px;
+  padding: 8px 0 12px;
   border-bottom: 1px solid var(--panel-border-subtle);
   gap: 12px;
 }
@@ -101,8 +105,7 @@ body {
 }
 
 /* USER PROFILE BADGE */
-.user-profile-badge,
-.profile-red-badge {
+.user-profile-badge {
   background: var(--card-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
@@ -115,8 +118,7 @@ body {
   max-width: 260px;
 }
 
-.user-profile-badge:hover,
-.profile-red-badge:hover {
+.user-profile-badge:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -171,34 +173,164 @@ body {
 }
 
 /* ========================================================
-   CLASSIC BIG-TECH AUTH SCREEN (SPLIT 50/50 ON DESKTOP)
+   CLAUDE-STYLE LANDING & AUTH SYSTEM
    ======================================================== */
-.auth-wrap {
+.landing-screen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* LANDING TOP NAVBAR */
+.landing-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.landing-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing-brand-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+}
+
+.landing-domain-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-sky);
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-weight: 600;
+}
+
+.landing-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.landing-nav-link {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.landing-nav-link:hover {
+  color: #ffffff;
+}
+
+.landing-nav-cta {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.landing-nav-cta:hover {
+  background: #e4e4e7;
+  transform: translateY(-1px);
+}
+
+/* LANDING HERO SECTION (SPLIT 50/50 ON DESKTOP) */
+.landing-hero {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
-  gap: 40px;
-  align-items: center;
-  min-height: calc(100vh - 40px);
-  padding: 20px 0;
+  gap: 48px;
+  align-items: start;
+  padding: 16px 0 64px;
   width: 100%;
 }
 
-.auth-left-pane {
+.hero-left-pane {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 24px;
   width: 100%;
 }
 
+.hero-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #38bdf8;
+  align-self: flex-start;
+}
+
+.hero-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.hero-headline {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.hero-headline-accent {
+  color: #38bdf8;
+}
+
+.hero-description {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.hero-description strong {
+  color: #ffffff;
+}
+
+/* AUTH CARD */
 .auth-box {
   background: var(--card-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-xl);
   width: 100%;
-  max-width: 420px;
-  padding: 32px 28px;
+  max-width: 440px;
+  padding: 30px 26px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255, 255, 255, 0.04);
 }
 
@@ -207,31 +339,358 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .auth-badge-icon {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .auth-card-title {
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.4px;
 }
 
 .auth-card-desc {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.4;
 }
 
-/* RIGHT PANE: 1:1 MINI TEKINMAIL LIVE APP PREVIEW (DESKTOP ONLY) */
-.auth-right-pane {
+/* HERO RIGHT PANE: 1:1 MINI TEKINMAIL LIVE APP PREVIEW */
+.hero-right-pane {
   display: flex;
   justify-content: flex-start;
   width: 100%;
+}
+
+.auth-showcase-box {
+  background: var(--bg-main);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================================
+   LANDING SECTIONS (HOW IT WORKS, FEATURES, FAQ)
+   ======================================================== */
+.landing-section {
+  padding: 72px 0 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-sky);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.section-desc {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  max-width: 620px;
+  margin-bottom: 36px;
+}
+
+/* STEPS GRID (01, 02, 03) */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.step-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.step-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+}
+
+.step-num-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  align-self: flex-start;
+}
+
+.step-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: rgba(2, 132, 199, 0.14);
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+}
+
+.step-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.step-card-text {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.step-pill-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-sky);
+  background: rgba(2, 132, 199, 0.1);
+  border: 1px solid rgba(2, 132, 199, 0.22);
+  padding: 4px 9px;
+  border-radius: var(--radius-xs);
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+/* FEATURES GRID (4 ITEMS) */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--card-hover);
+}
+
+.feature-icon-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #14141a;
+  border: 1px solid #242430;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+}
+
+.feature-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.feature-card-text {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* FAQ ACCORDION LIST */
+.faq-accordion-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 820px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--panel-border);
+  padding: 18px 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #ffffff;
+  gap: 16px;
+}
+
+.faq-question:hover {
+  color: #38bdf8;
+}
+
+.faq-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.3s ease;
+}
+
+.faq-answer p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  padding-top: 10px;
+}
+
+.faq-item.open .faq-chevron {
+  transform: rotate(180deg);
+  color: var(--accent-sky);
+}
+
+.faq-item.open .faq-answer {
+  max-height: 220px;
+  opacity: 1;
+}
+
+/* LANDING FOOTER */
+.landing-footer {
+  border-top: 1px solid var(--panel-border);
+  padding: 54px 0 36px;
+  width: 100%;
+  margin-top: 48px;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-col-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 380px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.footer-slogan {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.footer-domain-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-sky);
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+.footer-links-group {
+  display: flex;
+  gap: 60px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-col-heading {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-link:hover {
+  color: #ffffff;
+}
+
+.footer-static-text {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 22px;
+  font-size: 12px;
+  color: var(--text-dim);
 }
 
 .auth-showcase-box {
@@ -1463,24 +1922,25 @@ body {
 
 /* ========================================================
    RESPONSIVE DESIGN // DESKTOP (>= 1025px)
-   STRICT 1-SCREEN VIEWPORT: NO BODY/PAGE SCROLLBARS!
-   ONLY #emailsListContainer AND #messagesListContainer SCROLL!
+   STRICT 1-SCREEN ONLY FOR WORKSPACE MODE!
+   LANDING MODE SCROLLS FREELY!
    ======================================================== */
 @media (min-width: 1025px) {
-  html, body {
+  body.workspace-active,
+  html:has(body.workspace-active) {
     height: 100vh !important;
     max-height: 100vh !important;
     overflow: hidden !important;
   }
 
-  body {
-    padding: 12px 20px;
+  body.workspace-active {
+    padding: 12px 20px !important;
     display: flex;
     justify-content: center;
     align-items: stretch;
   }
 
-  .app-root {
+  body.workspace-active .app-root {
     height: calc(100vh - 24px);
     max-height: calc(100vh - 24px);
     overflow: hidden;
@@ -1537,17 +1997,13 @@ body {
     overflow-x: hidden !important;
   }
 
-  /* AUTH SCREEN ON DESKTOP (FITS IN 1 SCREEN WITH 50/50 SPLIT) */
-  .auth-wrap {
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
-    overflow: hidden;
+  /* LANDING HERO SECTION (50/50 SPLIT ON DESKTOP) */
+  .landing-hero {
     display: grid;
     grid-template-columns: 1fr 1.15fr;
-    gap: 40px;
-    align-items: center;
-    padding: 0;
+    gap: 48px;
+    align-items: start;
+    padding: 24px 0 64px;
   }
 
   .auth-showcase-box {
@@ -1558,29 +2014,51 @@ body {
 
 /* ========================================================
    RESPONSIVE DESIGN // TABLET (769px - 1024px)
+   SHOWCASE PREVIEW IS VISIBLE BELOW AUTH CARD WHEN SCROLLING!
    ======================================================== */
 @media (min-width: 769px) and (max-width: 1024px) {
   body {
-    padding: 14px 16px;
+    padding: 0 16px 40px;
   }
 
-  /* AUTH ON TABLET (DESKTOP SHOWCASE HIDDEN) */
-  .auth-wrap {
+  .landing-hero {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    padding: 30px 14px;
-    min-height: calc(100vh - 40px);
+    gap: 36px;
+    padding: 20px 0 48px;
   }
 
-  .auth-left-pane {
+  .hero-left-pane {
+    max-width: 520px;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-intro {
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-badge {
+    align-self: center;
+  }
+
+  .hero-right-pane {
+    display: flex !important;
     justify-content: center;
     width: 100%;
-    max-width: 440px;
+    max-width: 580px;
+    margin: 0 auto;
   }
 
-  .auth-right-pane {
-    display: none !important;
+  .steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .workspace-grid {
@@ -1615,32 +2093,104 @@ body {
 
 /* ========================================================
    RESPONSIVE DESIGN // MOBILE (<= 768px)
+   SHOWCASE PREVIEW IS VISIBLE BELOW AUTH CARD ON SCROLL!
    ======================================================== */
 @media (max-width: 768px) {
   body {
-    padding: 10px 12px 20px;
+    padding: 0 14px 40px;
   }
 
-  /* AUTH ON MOBILE (DESKTOP SHOWCASE HIDDEN) */
-  .auth-wrap {
+  .landing-nav {
+    padding: 14px 0;
+    margin-bottom: 20px;
+  }
+
+  .landing-nav-menu .landing-nav-link {
+    display: none;
+  }
+
+  .landing-hero {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    padding: 20px 0 40px;
-    min-height: unset;
+    gap: 24px;
+    padding: 10px 0 36px;
   }
 
-  .auth-left-pane {
-    justify-content: center;
+  .hero-intro {
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-badge {
+    align-self: center;
+  }
+
+  .hero-headline {
+    font-size: 27px;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .hero-description {
+    font-size: 13.5px;
+    text-align: center;
+  }
+
+  .hero-left-pane {
     width: 100%;
+    align-items: center;
   }
 
-  .auth-right-pane {
-    display: none !important;
+  .auth-box {
+    padding: 24px 18px;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 100%;
   }
 
-  .app-root {
-    gap: 10px;
+  /* SHOWCASE PREVIEW IS VISIBLE ON MOBILE WHEN SCROLLING DOWN */
+  .hero-right-pane {
+    display: flex !important;
+    width: 100%;
+    justify-content: center;
+    margin: 8px 0 0;
+  }
+
+  .auth-showcase-box {
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .mini-workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 8px;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .footer-links-group {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
   }
 
   .top-nav {
@@ -1662,7 +2212,7 @@ body {
   }
 
   .profile-handle {
-    display: none; /* Hide handle on tight mobile headers */
+    display: none;
   }
 
   /* MOBILE SEGMENTED VIEW SWITCHER */
@@ -1745,7 +2295,7 @@ body {
     font-size: 13px;
   }
 
-  /* INBOX MESSAGE ROWS ON MOBILE (NATIVE APP-STYLE STACK) */
+  /* INBOX MESSAGE ROWS ON MOBILE */
   .msg-row {
     display: grid;
     grid-template-areas:
@@ -1781,16 +2331,6 @@ body {
     grid-area: snippet;
     font-size: 12.5px;
     color: var(--text-muted);
-  }
-
-  /* AUTH ON MOBILE */
-  .auth-wrap {
-    padding: 20px 0 40px;
-  }
-
-  .auth-box {
-    padding: 24px 18px;
-    border-radius: var(--radius-lg);
   }
 
   /* MODALS ON MOBILE */

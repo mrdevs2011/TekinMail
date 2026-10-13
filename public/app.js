@@ -147,6 +147,7 @@ btnLogout.addEventListener('click', logout);
 const topNav = document.getElementById('topNav');
 
 function showAuth() {
+  document.body.classList.remove('workspace-active');
   authScreen.classList.remove('hidden');
   mainWorkspace.classList.add('hidden');
   userProfileBadge.classList.add('hidden');
@@ -154,6 +155,7 @@ function showAuth() {
 }
 
 function showWorkspace() {
+  document.body.classList.add('workspace-active');
   authScreen.classList.add('hidden');
   mainWorkspace.classList.remove('hidden');
   userProfileBadge.classList.remove('hidden');
@@ -169,6 +171,25 @@ function showWorkspace() {
   loadEmails();
   startSync();
 }
+
+// LANDING INTERACTION HELPERS
+window.toggleFaq = function(element) {
+  if (!element) return;
+  const isOpen = element.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+  if (!isOpen) {
+    element.classList.add('open');
+  }
+};
+
+window.scrollToAuthBox = function() {
+  const box = document.getElementById('authCardBox');
+  if (box) {
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const input = document.getElementById('loginUsername');
+    if (input) setTimeout(() => input.focus(), 450);
+  }
+};
 
 // BUTTON SPINNER HELPER
 function setButtonLoading(button, isLoading, originalText) {
@@ -264,8 +285,8 @@ async function loadEmails() {
 
     if (data.success) {
       currentEmails = data.emails || [];
-      if (data.domain) {
-        activeDomain = data.domain;
+      activeDomain = (data.domain && !data.domain.includes('tekinmail')) ? data.domain : 'bombaclat.uz';
+      if (domainSuffixLabel) {
         domainSuffixLabel.textContent = '@' + activeDomain;
       }
       renderEmails();

@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      domain: process.env.MAIL_DOMAIN || 'tekinmail.uz',
+      domain: process.env.MAIL_DOMAIN || 'bombaclat.uz',
       emails: emails || []
     });
 
