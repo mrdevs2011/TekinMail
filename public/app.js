@@ -578,20 +578,9 @@ btnRefreshInbox.addEventListener('click', () => {
   showToast('Inbox yangilandi');
 });
 
-function renderMessages() {
-  if (mobileInboxCount) mobileInboxCount.textContent = currentMessages.length;
-
-  if (currentMessages.length === 0) {
-    messagesListContainer.innerHTML = `
-      <div class="empty-box">
-        <p>Hech qanday xat kelmagan</p>
-        <span style="font-size:12px; color:#94a3b8;">Claude yoki boshqa saytdan yuborilgan kodlar shu yerda paydo bo'ladi</span>
-      </div>
-    `;
-    return;
-  }
-
-// HELPER: Quoted-Printable va HTML tozalash
+// ==========================================
+// EMAIL PARSING & DECODING HELPERS
+// ==========================================
 function decodeQuotedPrintableClient(str) {
   if (!str) return '';
   const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
@@ -618,6 +607,19 @@ function cleanSnippetText(text) {
                .trim();
   return clean.substring(0, 80);
 }
+
+function renderMessages() {
+  if (mobileInboxCount) mobileInboxCount.textContent = currentMessages.length;
+
+  if (currentMessages.length === 0) {
+    messagesListContainer.innerHTML = `
+      <div class="empty-box">
+        <p>Hech qanday xat kelmagan</p>
+        <span style="font-size:12px; color:#94a3b8;">Claude yoki boshqa saytdan yuborilgan kodlar shu yerda paydo bo'ladi</span>
+      </div>
+    `;
+    return;
+  }
 
   messagesListContainer.innerHTML = currentMessages.map(msg => {
     const timeFormatted = formatTime(msg.created_at);
