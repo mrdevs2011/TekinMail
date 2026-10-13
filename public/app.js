@@ -216,7 +216,7 @@ if (btnConfirmDelete) {
         closeDeleteModal();
         renderEmails();
         renderInboxTabs();
-        loadMessages();
+        loadMessages({ force: true });
         showToast(`Email bazadan butunlay oʻchirildi`);
       } else {
         showToast(data.error || 'Emailni oʻchirishda xatolik');
