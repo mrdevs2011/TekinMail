@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TekinMail // Developer Documentation & Architecture Guide</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='12' cy='12' r='12' fill='%230284C7'/><path d='M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #000000;
+      --bg-surface: #07070a;
+      --bg-card: #0d0d12;
+      --bg-hover: #14141c;
+      --border-base: #1a1a24;
+      --border-subtle: #12121a;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-blue: #0284C7;
+      --accent-sky: #38BDF8;
+      --accent-glow: rgba(2, 132, 199, 0.25);
+      --code-bg: #0b0b10;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* TOP HEADER */
+    .doc-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-base);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 60px;
+    }
+
+    .doc-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .doc-brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .doc-badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: rgba(2, 132, 199, 0.15);
+      color: var(--accent-sky);
+      border: 1px solid rgba(2, 132, 199, 0.35);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-base);
+      background: var(--bg-surface);
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      color: #fff;
+      border-color: #2a2a38;
+      background: var(--bg-card);
+    }
+
+    .nav-btn-primary {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    .nav-btn-primary:hover {
+      background: #e2e8f0;
+      color: #000000;
+    }
+
+    /* MAIN LAYOUT */
+    .doc-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 240px;
+      max-width: 1540px;
+      margin: 0 auto;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* SIDEBAR */
+    .doc-sidebar {
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 24px 16px;
+      border-right: 1px solid var(--border-base);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-search {
+      position: relative;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: #fff;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .sidebar-search input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .sidebar-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      padding-left: 8px;
+    }
+
+    .sidebar-links {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .sidebar-link:hover, .sidebar-link.active {
+      color: #ffffff;
+      background: var(--bg-card);
+    }
+
+    .sidebar-link.active {
+      font-weight: 600;
+      border-left: 2px solid var(--accent-blue);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .pill-green {
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    /* CONTENT BODY */
+    .doc-content {
+      padding: 40px 48px 80px;
+      overflow-y: auto;
+      max-width: 900px;
+    }
+
+    .doc-hero {
+      margin-bottom: 48px;
+      border-bottom: 1px solid var(--border-base);
+      padding-bottom: 32px;
+    }
+
+    .doc-category {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent-sky);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .doc-title {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+
+    .doc-lead {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* SECTIONS */
+    .doc-section {
+      margin-bottom: 56px;
+      scroll-margin-top: 80px;
+    }
+
+    .section-heading {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 16px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-heading::before {
+      content: "";
+      width: 4px;
+      height: 20px;
+      background: var(--accent-blue);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .doc-text {
+      font-size: 14.5px;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      line-height: 1.65;
+    }
+
+    /* CARDS & GRIDS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-base);
+      border-radius: 10px;
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+
+    .doc-card:hover {
+      border-color: #272738;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* CODE BLOCKS */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border-base);
+      border-radius: 10px;
+      margin: 18px 0;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0e0e14;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .code-lang {
+      color: var(--accent-sky);
+      font-weight: 600;
+    }
+
+    .btn-copy-code {
+      background: transparent;
+      border: 1px solid var(--border-base);
+      color: var(--text-muted);
+      padding: 3px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: all 0.15s;
+    }
+
+    .btn-copy-code:hover {
+      color: #fff;
+      border-color: #3b3b4f;
+    }
+
+    pre code {
+      display: block;
+      padding: 14px 16px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+
+    /* INLINE CODE */
+    code:not(pre code) {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* ALERTS / CALLOUTS */
+    .callout {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 18px 0;
+      font-size: 13.5px;
+      line-height: 1.55;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-info {
+      background: rgba(2, 132, 199, 0.1);
+      border-left: 3px solid var(--accent-blue);
+      color: #bae6fd;
+    }
+
+    .callout-success {
+      background: rgba(34, 197, 94, 0.1);
+      border-left: 3px solid #22c55e;
+      color: #bbf7d0;
+    }
+
+    .callout-warning {
+      background: rgba(234, 179, 8, 0.1);
+      border-left: 3px solid #eab308;
+      color: #fef08a;
+    }
+
+    /* ARCHITECTURE DIAGRAM CONTAINER */
+    .arch-diagram-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      overflow-x: auto;
+    }
+
+    /* STEPS TIMELINE */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin: 24px 0;
+      position: relative;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 18px;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-sky);
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    /* RIGHT TOC SIDEBAR */
+    .doc-toc {
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 32px 16px;
+      border-left: 1px solid var(--border-base);
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .toc-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toc-link {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.15s;
+      line-height: 1.4;
+    }
+
+    .toc-link:hover {
+      color: #ffffff;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1180px) {
+      .doc-layout { grid-template-columns: 240px 1fr; }
+      .doc-toc { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .doc-layout { grid-template-columns: 1fr; }
+      .doc-sidebar { display: none; }
+      .doc-content { padding: 24px 20px 60px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <header class="doc-nav">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="/" class="doc-brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="12" fill="#0284C7"/>
+          <path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12ZM16 12V13.5C16 14.8807 17.1193 16 18.5 16V16C19.8807 16 21 14.8807 21 13.5V12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21H16" 
+                stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="doc-brand-title">TekinMail</span>
+      </a>
+      <span class="doc-badge">v2.0 PRODUCTION</span>
+    </div>
+
+    <div class="nav-actions">
+      <a href="https://github.com/mrdevs2011/TekinMail" target="_blank" class="nav-btn">GitHub</a>
+      <a href="https://tekinmail.vercel.app" class="nav-btn nav-btn-primary">Jonli Ilova ↗</a>
+    </div>
+  </header>
+
+  <!-- MAIN DOCUMENTATION CONTAINER -->
+  <div class="doc-layout">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="doc-sidebar">
+      <div class="sidebar-search">
+        <input type="text" id="docSearch" placeholder="Hujjatlardan izlash..." oninput="filterDocs(this.value)">
+      </div>
+
+      <div>
+        <div class="sidebar-group-title">Asosiy Muhandislik</div>
+        <div class="sidebar-links">
+          <a href="#architecture" class="sidebar-link active">
+            <span>Infratuzilma Arxitekturasi</span>
+            <span class="pill-green">LIVE</span>
+          </a>
+          <a href="#cloudflare" class="sidebar-link">
+            <span>Cloudflare Email Worker</span>
+          </a>
+          <a href="#mime-parsing" class="sidebar-link">
+            <span>MIME & Quoted-Printable</span>
+          </a>
+          <a href="#database" class="sidebar-link">
+            <span>Supabase PostgreSQL DB</span>
+          </a>
+          <a href="#frontend-ux" class="sidebar-link">
+            <span>Frontend & 1:1 Email Render</span>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-group-title">Qoʻllanmalar</div>
+        <div class="sidebar-links">
+          <a href="#setup-guide" class="sidebar-link">
+            <span>10-Daqiqalik Setup Guide</span>
+          </a>
+          <a href="#smtp-verification" class="sidebar-link">
+            <span>SMTP Jonli Tekshiruv</span>
+          </a>
+          <a href="#api-reference" class="sidebar-link">
+            <span>API Reference</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER CONTENT -->
+    <main class="doc-content">
+      
+      <!-- HERO -->
+      <section class="doc-hero">
+        <div class="doc-category">Infratuzilma va Ishlab Chiqish Hujjatlari</div>
+        <h1 class="doc-title">TekinMail Arxitekturasi va Dasturchilar Qoʻllanmasi</h1>
+        <p class="doc-lead">
+          TekinMail qanday qilib ogʻir SMTP serverlarsiz, faqat Cloudflare Edge, Vercel Serverless va Supabase orqali 100% real vaqtda haqiqiy xatlarni qabul qilib, brauzerda 1:1 original formatda render qiladi? Ushbu hujjat butun tizimning muhandislik yechimlarini batafsil yoritadi.
+        </p>
+      </section>
+
+      <!-- 1. ARCHITECTURE -->
+      <section class="doc-section" id="architecture">
+        <h2 class="section-heading">1. Infratuzilma Arxitekturasi (System Architecture)</h2>
+        <p class="doc-text">
+          An'anaviy email serverlar (masalan, Postfix, Exim, Dovecot) doimiy ochiq portlar, murakkab spam filtrlari va disk kvotalarini talab qiladi. TekinMail esa butunlay <strong>hodisalarga asoslangan (Event-Driven Edge)</strong> arxitekturaga qurilgan.
+        </p>
+
+        <div class="arch-diagram-wrap">
+          <svg viewBox="0 0 800 240" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
+            <!-- NODE 1 -->
+            <rect x="10" y="80" width="130" height="70" rx="8" fill="#0d0d14" stroke="#1a1a26"/>
+            <text x="75" y="112" fill="#fff" font-size="12" font-weight="700" text-anchor="middle" font-family="sans-serif">Tashqi Dunyo</text>
+            <text x="75" y="130" fill="#94a3b8" font-size="10" text-anchor="middle" font-family="monospace">Claude / OpenAI</text>
+
+            <!-- ARROW 1 -->
+            <path d="M140 115 H200" stroke="#0284C7" stroke-width="2" stroke-dasharray="4 4"/>
+            <polygon points="200,115 194,111 194,119" fill="#0284C7"/>
+            <text x="170" y="105" fill="#38BDF8" font-size="9" text-anchor="middle" font-family="monospace">SMTP:25</text>
+
+            <!-- NODE 2 -->
+            <rect x="205" y="70" width="150" height="90" rx="8" fill="#0d0d14" stroke="#0284C7"/>
+            <text x="280" y="102" fill="#fff" font-size="12" font-weight="700" text-anchor="middle" font-family="sans-serif">Cloudflare MX</text>
+            <text x="280" y="120" fill="#38BDF8" font-size="10" text-anchor="middle" font-family="monospace">Email Routing</text>
+            <text x="280" y="136" fill="#64748b" font-size="9" text-anchor="middle" font-family="monospace">*@bombaclat.uz</text>
+
+            <!-- ARROW 2 -->
+            <path d="M355 115 H415" stroke="#0284C7" stroke-width="2"/>
+            <polygon points="415,115 409,111 409,119" fill="#0284C7"/>
+            <text x="385" y="105" fill="#38BDF8" font-size="9" text-anchor="middle" font-family="monospace">Catch-all</text>
+
+            <!-- NODE 3 -->
+            <rect x="420" y="70" width="150" height="90" rx="8" fill="#0d0d14" stroke="#1a1a26"/>
+            <text x="495" y="102" fill="#fff" font-size="12" font-weight="700" text-anchor="middle" font-family="sans-serif">Email Worker</text>
+            <text x="495" y="120" fill="#a855f7" font-size="10" text-anchor="middle" font-family="monospace">tekinmail-receiver</text>
+            <text x="495" y="136" fill="#64748b" font-size="9" text-anchor="middle" font-family="monospace">Raw MIME Stream</text>
+
+            <!-- ARROW 3 -->
+            <path d="M570 115 H630" stroke="#0284C7" stroke-width="2"/>
+            <polygon points="630,115 624,111 624,119" fill="#0284C7"/>
+            <text x="600" y="105" fill="#38BDF8" font-size="9" text-anchor="middle" font-family="monospace">HTTP POST</text>
+
+            <!-- NODE 4 -->
+            <rect x="635" y="70" width="150" height="90" rx="8" fill="#0d0d14" stroke="#10b981"/>
+            <text x="710" y="102" fill="#fff" font-size="12" font-weight="700" text-anchor="middle" font-family="sans-serif">Vercel Backend</text>
+            <text x="710" y="120" fill="#10b981" font-size="10" text-anchor="middle" font-family="monospace">/api/incoming-email</text>
+            <text x="710" y="136" fill="#64748b" font-size="9" text-anchor="middle" font-family="monospace">Supabase DB Sync</text>
+          </svg>
+        </div>
+
+        <div class="grid-2">
+          <div class="doc-card">
+            <div class="card-title">
+              <span style="color:#0284C7;">●</span> 0-Disk Quota & Cheksizlik
+            </div>
+            <div class="card-desc">
+              Xatlar server diskida to'planib qolmaydi. Cloudflare xatni kelishi bilan V8 xotirasida ushlaydi va darhol JSON qilib bizning backendimizga uzatadi.
+            </div>
+          </div>
+          <div class="doc-card">
+            <div class="card-title">
+              <span style="color:#10b981;">●</span> 0.5 Soniyalik Kechikish
+            </div>
+            <div class="card-desc">
+              An'anaviy IMAP/POP3 cron polling tizimlaridagi 1-2 daqiqalik kutish o'rniga, webhook orqali xat soniya ichida foydalanuvchi ekranida paydo bo'ladi.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CLOUDFLARE EMAIL WORKER -->
+      <section class="doc-section" id="cloudflare">
+        <h2 class="section-heading">2. Cloudflare Email Worker Muhandisligi</h2>
+        <p class="doc-text">
+          Cloudflare Email Routing odatiy holatda faqat xatni shaxsiy Gmail pochtaga forward qila oladi. Lekin TekinMail foydalanuvchilari ochadigan yuzlab turli xil manzillarni boshqarish uchun biz Cloudflare <code>email()</code> hodisasidan foydalandik.
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JavaScript (cloudflare-worker.js)</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Nusxalash</button>
+          </div>
+          <pre><code>export default {
+  async email(message, env, ctx) {
+    try {
+      const to = (message.to || '').toLowerCase().trim();
+      const from = message.from || '';
+      const subject = message.headers.get('subject') || 'No Subject';
+      const fromName = message.headers.get('from') || from;
+
+      // 1. Kelgan xatning to'liq MIME xom matnini o'qib olamiz
+      const rawText = await new Response(message.raw).text();
+
+      // 2. Oddiy body matnini ajratamiz
+      let bodyText = '';
+      const splitBody = rawText.split(/\r?\n\r?\n/);
+      if (splitBody.length > 1) {
+        bodyText = splitBody.slice(1).join('\n\n');
+      } else {
+        bodyText = rawText;
+      }
+
+      // 3. TekinMail Vercel API backendiga JSON Webhook yuboramiz
+      const targetApiUrl = env.TEKINMAIL_API_URL || 'https://tekinmail.vercel.app/api/incoming-email';
+
+      const res = await fetch(targetApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: to,
+          from: from,
+          from_name: fromName,
+          subject: subject,
+          raw: rawText,
+          body: bodyText,
+          html: ''
+        })
+      });
+
+      console.log('TekinMail Forward Status:', res.status);
+    } catch (err) {
+      console.error('Error forwarding email:', err);
+    }
+  }
+};</code></pre>
+        </div>
+
+        <div class="callout callout-info">
+          <div>
+            <strong>Muhim qoida:</strong> Cloudflare Routing Rules boʻlimida <code>Catch-all rule</code> yoqilgan bo'lishi va Action: <code>Send to a Worker</code> qilib <code>tekinmail-receiver</code> tanlangan bo'lishi shart!
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MIME & QUOTED-PRINTABLE -->
+      <section class="doc-section" id="mime-parsing">
+        <h2 class="section-heading">3. MIME va Quoted-Printable Parsing Muhandisligi</h2>
+        <p class="doc-text">
+          Haqiqiy korporativ xatlarni (Anthropic/Claude, OpenAI, Google) qabul qilishda eng katta toʻsiq — bu MIME Quoted-Printable kodlashidir:
+        </p>
+        <ul style="margin-left: 20px; color: #94a3b8; font-size: 14px; margin-bottom: 16px;">
+          <li><code>=3D</code> belgisi aslida <code>=</code> ga teng;</li>
+          <li>Satr oxiridagi <code>=\r\n</code> soft line break boʻlib, havolani ikkiga boʻlib yuboradi;</li>
+          <li>Claude Magic Link URL kodida <code>=3D=3D</code> deb uzatiladi, agar u <code>==</code> ga dekodlanmasa, havola ishlamay qoladi.</li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JavaScript (api/incoming-email.js)</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Nusxalash</button>
+          </div>
+          <pre><code>// Quoted-Printable toza UTF-8 ga o'tkazish
+function decodeQuotedPrintable(str) {
+  if (!str) return '';
+  const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, ''); // Soft-breaklarni yo'qotish
+  return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
+    try {
+      const bytes = [];
+      for (let i = 0; i < match.length; i += 3) {
+        bytes.push(parseInt(match.substr(i + 1, 2), 16));
+      }
+      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+    } catch (e) {
+      return match;
+    }
+  });
+}</code></pre>
+        </div>
+
+        <h3 style="font-size:16px; margin: 24px 0 10px; color:#fff;">Cross-Origin Rasmlar va Logolarni Toʻsiqsiz Yuklash</h3>
+        <p class="doc-text">
+          Koʻp provayderlar (shu jumladan <code>claude.ai</code>) oʻz rasmlarini boshqa saytlar chaqirsa, <code>Referer</code> boshligʻi sababli bloklaydi. Buni bartaraf qilish uchun TekinMail xat render qilinayotganda quyidagi xavfsizlik bypassini amalga oshiradi:
+        </p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JavaScript (public/app.js)</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Nusxalash</button>
+          </div>
+          <pre><code>// 1. Barcha refererlarni o'chirib, tashqi rasmlarni ochish
+decodedHtml = decodedHtml.replace('&lt;head&gt;', '&lt;head&gt;&lt;meta name="referrer" content="no-referrer"&gt;&lt;base target="_blank"&gt;');
+
+// 2. Har bir rasmga no-referrer siyosatini qo'shish
+decodedHtml = decodedHtml.replace(/&lt;img\s+/gi, '&lt;img referrerpolicy="no-referrer" ');
+
+// 3. Cheklovchi sandboxlarsiz toza iframe'ga joylash
+iframe.srcdoc = decodedHtml;</code></pre>
+        </div>
+      </section>
+
+      <!-- 4. DATABASE SCHEMA -->
+      <section class="doc-section" id="database">
+        <h2 class="section-heading">4. Supabase PostgreSQL Modeli</h2>
+        <p class="doc-text">
+          Ma'lumotlar bazasida 3 ta asosiy jadval mavjud. Eng muhim qoida: <code>ON DELETE CASCADE</code> — foydalanuvchi bitta emailni oʻchirsa, unga kelgan barcha xabarlar avtomatik va toza yoʻqoladi.
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">SQL (supabase-schema.sql)</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Nusxalash</button>
+          </div>
+          <pre><code>-- 1. USERS
+CREATE TABLE public.users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- 2. EMAILS (Virtual manzillar)
+CREATE TABLE public.emails (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    address TEXT UNIQUE NOT NULL,
+    token TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+-- 3. MESSAGES (Kelgan xatlar va HTML)
+CREATE TABLE public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    email_address TEXT NOT NULL,
+    from_name TEXT,
+    from_address TEXT,
+    subject TEXT DEFAULT 'No Subject',
+    body TEXT,
+    html TEXT,
+    is_starred BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);</code></pre>
+        </div>
+      </section>
+
+      <!-- 5. FRONTEND & UX -->
+      <section class="doc-section" id="frontend-ux">
+        <h2 class="section-heading">5. Frontend & UI/UX Muhandisligi</h2>
+        <div class="grid-2">
+          <div class="doc-card">
+            <div class="card-title">1-Screen Desktop Layout</div>
+            <div class="card-desc">Desktop rejimida butun sahifa boʻylab vertikal scroll yoʻq. Faqat emaillar va inbox qutilari ichida mustaqil izolyatsiyalangan scroll mavjud.</div>
+          </div>
+          <div class="doc-card">
+            <div class="card-title">Majburiy 2-Sekundlik Splash</div>
+            <div class="card-desc">Ilova ochilganda silky qora splash screen, progress bar va pulsatsiyalanuvchi logo kamida 2000ms davomida silliq namoyish etiladi.</div>
+          </div>
+          <div class="doc-card">
+            <div class="card-title">Skeleton Shimmering</div>
+            <div class="card-desc">Ma'lumotlar yuklanguncha qotib qolmaslik uchun ikkala ro'yxatda ham yaltirab turuvchi zamonaviy skeleton animatsiyasi ishlaydi.</div>
+          </div>
+          <div class="doc-card">
+            <div class="card-title">Hover Delete & Tasdiqlash Modali</div>
+            <div class="card-desc">Email kartalaridagi <code>X</code> tugmasi doimiy turmaydi, hover boʻlganda chiqadi. Bosilganda tasdiqlash soʻrab, bazadan butunlay oʻchiradi.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. SETUP GUIDE -->
+      <section class="doc-section" id="setup-guide">
+        <h2 class="section-heading">6. 10-Daqiqalik Toʻliq Oʻrnatish (Step-by-Step)</h2>
+        
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-title">Supabase SQL Editor'da bazani ochish</div>
+              <p class="doc-text">Supabase loyihangizdagi SQL Editor'ga <code>supabase-schema.sql</code> kodini tashlab, Run tugmasini bosing.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-title">Vercel'ga deploy qilish</div>
+              <p class="doc-text">Loyihani GitHub orqali Vercel'ga ulab, <code>SUPABASE_URL</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code> va <code>MAIL_DOMAIN=bombaclat.uz</code> oʻzgaruvchilarini kiriting.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-title">Cloudflare Email Routing yoqish</div>
+              <p class="doc-text">Domen DNS'idan eski Ahost MX yozuvlarini o'chirib, Cloudflare Email Routing taklif qilgan 3 ta yangi MX yozuvini tasdiqlang.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <div class="step-title">Worker yaratish va Catch-all'ga ulash</div>
+              <p class="doc-text"><code>cloudflare-worker.js</code> kodini Cloudflare Workers'da deploy qiling va domenning Catch-all qoidasiga <code>Send to a Worker</code> qilib biriktiring.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. SMTP VERIFICATION -->
+      <section class="doc-section" id="smtp-verification">
+        <h2 class="section-heading">7. SMTP Jonli Tekshiruv (Live SMTP Verification)</h2>
+        <p class="doc-text">
+          Tizim 100% toʻgʻri ishlaganini isbotlovchi jonli terminal soʻrovi va Cloudflare javobi:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">SMTP Handshake Terminal Log</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Nusxalash</button>
+          </div>
+          <pre><code>$ nc route1.mx.cloudflare.net 25
+220 mx.cloudflare.net Cloudflare Email ESMTP Service ready
+HELO mail.google.com
+250 mx.cloudflare.net greets mail.google.com
+MAIL FROM:<sender@gmail.com>
+250 Ok
+RCPT TO:<claude@bombaclat.uz>
+250 Ok  <-- [MUAFFAQIYAT: XAT QABUL QILINDI VA WORKER'GA YO'NALTIRILDI]
+QUIT
+221 mx.cloudflare.net closing transmission channel</code></pre>
+        </div>
+
+        <div class="callout callout-success">
+          <div>
+            <strong>Isbotlangan natija:</strong> 2026-yil 13-oktabr kuni Anthropic (Claude.ai) rasmiy tizimidan yuborilgan haqiqiy Magic Link xati TekinMail inboxiga muvaffaqiyatli qabul qilindi va toʻliq vizual ochildi.
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. API REFERENCE -->
+      <section class="doc-section" id="api-reference">
+        <h2 class="section-heading">8. API Reference</h2>
+
+        <div class="doc-card" style="margin-bottom:16px;">
+          <div class="card-title"><code>POST /api/incoming-email</code></div>
+          <div class="card-desc" style="margin-bottom:10px;">Cloudflare Worker'dan xatni qabul qilib, Quoted-Printable dekodlab, Supabase'ga yozish webhooki.</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text-dim);">Payload: { to, from, from_name, subject, raw, body, html }</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="card-title"><code>POST /api/delete-email</code></div>
+          <div class="card-desc" style="margin-bottom:10px;">Email manzilini va unga kelgan barcha xatlarini bazadan CASCADE orqali o'chirish.</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text-dim);">Headers: Authorization: Bearer &lt;token&gt; | Payload: { address }</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT TOC (TABLE OF CONTENTS) -->
+    <aside class="doc-toc">
+      <div class="toc-title">Ushbu sahifada</div>
+      <div class="toc-links">
+        <a href="#architecture" class="toc-link">1. Infratuzilma Arxitekturasi</a>
+        <a href="#cloudflare" class="toc-link">2. Cloudflare Worker</a>
+        <a href="#mime-parsing" class="toc-link">3. MIME & Quoted-Printable</a>
+        <a href="#database" class="toc-link">4. Supabase PostgreSQL</a>
+        <a href="#frontend-ux" class="toc-link">5. Frontend & UI/UX</a>
+        <a href="#setup-guide" class="toc-link">6. Setup Guide</a>
+        <a href="#smtp-verification" class="toc-link">7. SMTP Tekshiruv</a>
+        <a href="#api-reference" class="toc-link">8. API Reference</a>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    function copyCode(btn) {
+      const pre = btn.closest('.code-block').querySelector('pre code');
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Nusxalandi! ✓';
+        btn.style.color = '#38bdf8';
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.style.color = '';
+        }, 2000);
+      });
+    }
+
+    function filterDocs(query) {
+      const q = (query || '').toLowerCase().trim();
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        const text = link.textContent.toLowerCase();
+        link.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>
