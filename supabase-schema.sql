@@ -1,8 +1,9 @@
 -- ========================================================
--- TEKINMAIL MULTI-USER SYSTEM SCHEMA (SUPABASE)
+-- TEKINMAIL // MASTER DATABASE SCHEMA FOR SUPABASE
+-- Yangi Supabase loyihasi uchun yagona, mukammal SQL skript
 -- ========================================================
 
--- 1. Foydalanuvchilar jadvali (Root hisob, email talab qilinmaydi)
+-- 1. FOYDALANUVCHILAR JADVALI (ROOT AKKAUNTLAR - HECH QANDAY EMAIL KERAK EMAS)
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name TEXT NOT NULL,
@@ -11,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Foydalanuvchining shaxsiy emaillari
+-- 2. FOYDALANUVCHINING SHAXSIY EMAILLARI JADVALI
 CREATE TABLE IF NOT EXISTS public.emails (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -20,17 +21,24 @@ CREATE TABLE IF NOT EXISTS public.emails (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Tezkor qidiruv indekslari
+-- 3. TEZKOR QIDIRUV INDEKSLARI
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_emails_user_id ON public.emails(user_id);
+CREATE INDEX IF NOT EXISTS idx_emails_address ON public.emails(address);
 
--- Row Level Security (RLS)
+-- 4. ROW LEVEL SECURITY (RLS) YOQISH
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.emails ENABLE ROW LEVEL SECURITY;
 
--- API orqali kirish ruxsatlari
+-- 5. API UCHUN RUXSAT SIYOSATLARI (POLICIES)
 DROP POLICY IF EXISTS "Allow public all on users" ON public.users;
-CREATE POLICY "Allow public all on users" ON public.users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public all on users" ON public.users 
+    FOR ALL 
+    USING (true) 
+    WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow public all on emails" ON public.emails;
-CREATE POLICY "Allow public all on emails" ON public.emails FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public all on emails" ON public.emails 
+    FOR ALL 
+    USING (true) 
+    WITH CHECK (true);

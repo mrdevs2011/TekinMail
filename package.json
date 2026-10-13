@@ -2,7 +2,8 @@
   "name": "tekinmail",
   "version": "1.0.0",
   "type": "module",
-  "description": "Unlimited temporary email manager with Supabase and Vercel",
+  "description": "TekinMail root email hub with multi-user authentication",
+  "main": "api/login.js",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   }
