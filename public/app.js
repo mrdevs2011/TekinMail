@@ -638,13 +638,23 @@ async function loadMessages(opts = {}) {
     }
     if (data.success) {
       const next = data.messages || [];
+      const prevIds = new Set((currentMessages || []).map(m => String(m.id)));
       const prevSig = messagesSignature(currentMessages);
       const nextSig = messagesSignature(next);
       const firstPaint = !messagesHydrated;
       messagesHydrated = true;
       if (!force && !firstPaint && prevSig === nextSig) return;
+
+      // Yangi xatlar (oldinda bo'lmagan id)
+      const newOnes = next.filter(m => !prevIds.has(String(m.id)));
       currentMessages = next;
-      renderMessages();
+      renderMessages(); // skeleton emas — oddiy ro'yxat
+
+      if (silent && !firstPaint && newOnes.length > 0) {
+        const n = newOnes.length;
+        const subj = (newOnes[0].subject || 'Mavzusiz').slice(0, 48);
+        showToast(n === 1 ? `Yangi xat: ${subj}` : `${n} ta yangi xat`);
+      }
     }
   } catch (err) {
     console.warn('Load messages failed:', err);
