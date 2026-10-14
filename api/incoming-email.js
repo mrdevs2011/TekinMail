@@ -5,6 +5,11 @@ import { setSecurityHeaders, parseBody } from './_utils.js';
 // Quoted-Printable (e.g. =3D -> =, =\n -> '') decoder
 function decodeQuotedPrintable(str) {
   if (!str) return '';
+  // Faqat Quoted-Printable formatida bo'lsa (masalan =3D yoki =\r\n bo'lsa) dekodlaymiz.
+  // Agar allaqachon dekodlangan bo'lsa, URL query paramlaridagi =20, =40 kabilarni buzmaslik uchun tegmaymiz!
+  if (!/=3D/i.test(str) && !/=(?:\r\n|\n|\r)/.test(str)) {
+    return str;
+  }
   const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
   return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
     try {

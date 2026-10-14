@@ -872,6 +872,11 @@ btnRefreshInbox.addEventListener('click', () => {
 // ==========================================
 function decodeQuotedPrintableClient(str) {
   if (!str) return '';
+  // Faqat Quoted-Printable formatida saqlangan bo'lsa dekodlaymiz.
+  // Agar allaqachon dekodlangan bo'lsa, URL query paramlaridagi =20, =40 kabilarni buzmaslik uchun tegmaymiz!
+  if (!/=3D/i.test(str) && !/=(?:\r\n|\n|\r)/.test(str)) {
+    return str;
+  }
   const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
   return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
     try {
@@ -959,45 +964,77 @@ window.openMessageModal = function(msgIdOrObj) {
     let decodedHtml = decodeQuotedPrintableClient(rawHtml);
 
     // Rasmlarni to'siqsiz yuklash uchun no-referrer va barcha linklar yangi oynada ochilishi uchun base target
-    if (decodedHtml.includes('<head>')) {
-      decodedHtml = decodedHtml.replace('<head>', '<head><meta name="referrer" content="no-referrer"><base target="_blank">');
-    } else if (decodedHtml.includes('<head ')) {
-      decodedHtml = decodedHtml.replace(/<head[^>]*>/, '$&<meta name="referrer" content="no-referrer"><base target="_blank">');
+    const headMeta = `
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="referrer" content="no-referrer">
+      <base target="_blank">
+      <style>
+        html, body {
+          margin: 0;
+          padding: 16px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          color: #111827;
+          background: #ffffff;
+          box-sizing: border-box;
+          overflow-y: auto !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        img {
+          max-width: 100%;
+        }
+        table {
+          max-width: 100%;
+        }
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.25);
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.4);
+        }
+      </style>
+    `;
+
+    if (/<head[\s>]/i.test(decodedHtml)) {
+      decodedHtml = decodedHtml.replace(/<head[^>]*>/i, `$&${headMeta}`);
+    } else if (/<html[\s>]/i.test(decodedHtml)) {
+      decodedHtml = decodedHtml.replace(/<html[^>]*>/i, `$&<head>${headMeta}</head>`);
     } else {
-      decodedHtml = '<meta name="referrer" content="no-referrer"><base target="_blank">' + decodedHtml;
+      decodedHtml = `<!DOCTYPE html><html><head>${headMeta}</head><body>${decodedHtml}</body></html>`;
     }
 
     // Barcha img teglariga referrerpolicy="no-referrer" qo'shamiz
-    decodedHtml = decodedHtml.replace(/<img\s+/gi, '<img referrerpolicy="no-referrer" ');
+    decodedHtml = decodedHtml.replace(/<img\b([^>]*?)>/gi, (match, attrs) => {
+      if (/referrerpolicy=/i.test(attrs)) {
+        return `<img ${attrs.replace(/referrerpolicy=["'][^"']*["']/gi, 'referrerpolicy="no-referrer"')}>`;
+      }
+      return `<img referrerpolicy="no-referrer" ${attrs}>`;
+    });
 
     const wrap = document.createElement('div');
     wrap.className = 'msg-iframe-wrap';
 
     const iframe = document.createElement('iframe');
     iframe.className = 'msg-email-frame';
-    // Sandbox olib tashlandi - rasmlar to'liq va erkin yuklanadi
-    iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    // Sandbox olib tashlandi: rasmlar, CDN va shriftlar erkin va xatosiz yuklanadi
     iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.srcdoc = decodedHtml;
-
-    iframe.onload = () => {
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc && doc.body) {
-          const scrollH = doc.body.scrollHeight;
-          if (scrollH > 350) {
-            iframe.style.height = (scrollH + 40) + 'px';
-          }
-        }
-      } catch (e) {}
-    };
 
     wrap.appendChild(iframe);
     msgDetailBody.appendChild(wrap);
   } else {
     const card = document.createElement('div');
     card.className = 'msg-plain-card';
-    card.innerHTML = `<pre style="white-space:pre-wrap; font-family:var(--font-sans); font-size:13.5px; line-height:1.6; color:#f4f4f6;">${escapeHtml(msg.body || '')}</pre>`;
+    card.innerHTML = `<pre style="white-space:pre-wrap; font-family:var(--font-sans); font-size:13.5px; line-height:1.6; color:#f4f4f6; margin:0;">${escapeHtml(msg.body || '')}</pre>`;
     msgDetailBody.appendChild(card);
   }
 
