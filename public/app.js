@@ -1023,7 +1023,15 @@ window.openMessageModal = function(msgIdOrObj) {
       decodedHtml = `<!DOCTYPE html><html><head>${headMeta}</head><body>${decodedHtml}</body></html>`;
     }
 
-    // Barcha img teglariga referrerpolicy="no-referrer" qo'shamiz
+    // Barcha tashqi rasmlarni /api/proxy-image orqali xavfsiz va to'siqsiz yuklaymiz.
+    // Bu Contentful, Anthropic, Sendgrid kabi barcha CDN'larning hotlink / CORS / CORP to'siqlarini chetlab o'tib, rasmlarni 100% ochilishini ta'minlaydi!
+    const imgRe = /<img\b([^>]*?)src=(['"]?)(https?:\/\/[^\s'">]+)\2([^>]*?)>/gi;
+    decodedHtml = decodedHtml.replace(imgRe, (match, before, quote, src, after) => {
+      const proxied = `/api/proxy-image?url=${encodeURIComponent(src)}`;
+      return `<img ${before} src="${proxied}" referrerpolicy="no-referrer" data-orig-src="${src}" onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src=this.dataset.origSrc;}" ${after}>`;
+    });
+
+    // Har qanday boshqa img teglariga ham no-referrer qo'shamiz
     decodedHtml = decodedHtml.replace(/<img\b([^>]*?)>/gi, (match, attrs) => {
       if (/referrerpolicy=/i.test(attrs)) {
         return `<img ${attrs.replace(/referrerpolicy=["'][^"']*["']/gi, 'referrerpolicy="no-referrer"')}>`;
