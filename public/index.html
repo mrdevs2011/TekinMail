@@ -736,15 +736,18 @@
       <div class="modal-backdrop-click" id="addEmailBackdrop"></div>
       <div class="modal-card">
         <h3>Yangi Email Qo'shish</h3>
-        <p class="modal-sub">Ixtiyoriy prefiks kiriting yoki bo'sh qoldirib avtomatik yarating:</p>
+        <p class="modal-sub">Yangi email manzili uchun nom kiriting:</p>
         <form id="formAddCustomEmail">
-          <div class="prefix-input-wrap">
-            <input type="text" id="customEmailPrefix" placeholder="masalan: otheracc, test, mrdev" autofocus>
+          <div class="prefix-input-wrap" id="prefixInputWrap">
+            <input type="text" id="customEmailPrefix" placeholder="masalan: otheracc, test, mrdev" autocomplete="off" autofocus>
             <span id="domainSuffixLabel" data-mail-domain data-mail-format="at">@…</span>
+          </div>
+          <div id="emailPrefixStatus" class="email-prefix-status hidden">
+            <span id="emailPrefixStatusText"></span>
           </div>
           <div class="modal-btns">
             <button type="button" id="btnAddEmailCancel" class="btn-modal-cancel">Bekor qilish</button>
-            <button type="submit" id="btnAddEmailConfirm" class="btn-modal-submit">Yaratish</button>
+            <button type="submit" id="btnAddEmailConfirm" class="btn-modal-submit" disabled>Yaratish</button>
           </div>
         </form>
       </div>

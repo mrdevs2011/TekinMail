@@ -75,6 +75,11 @@ const formAddCustomEmail = document.getElementById('formAddCustomEmail');
 const customEmailPrefix = document.getElementById('customEmailPrefix');
 const domainSuffixLabel = document.getElementById('domainSuffixLabel');
 const btnAddEmailCancel = document.getElementById('btnAddEmailCancel');
+const btnAddEmailConfirm = document.getElementById('btnAddEmailConfirm');
+const prefixInputWrap = document.getElementById('prefixInputWrap');
+const emailPrefixStatus = document.getElementById('emailPrefixStatus');
+const emailPrefixStatusText = document.getElementById('emailPrefixStatusText');
+let checkPrefixTimeout = null;
 
 const msgDetailModal = document.getElementById('msgDetailModal');
 const msgDetailBackdrop = document.getElementById('msgDetailBackdrop');
@@ -141,6 +146,8 @@ let messagesHydrated = false;
 let emailsHydrated = false;
 let syncInterval = null;
 let emailToDelete = null;
+let isTabSwitching = false;
+let activeTabRequestId = 0;
 
 // ADMIN STATE
 let adminUsers = [];
@@ -464,19 +471,130 @@ async function loadEmails(opts = {}) {
 }
 
 // ADD +1 CLICK -> OPEN MODAL
+function resetAddEmailModal() {
+  if (customEmailPrefix) customEmailPrefix.value = '';
+  if (prefixInputWrap) prefixInputWrap.classList.remove('has-error', 'has-success');
+  if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+  if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
+  if (btnAddEmailConfirm) {
+    btnAddEmailConfirm.disabled = true;
+    setButtonLoading(btnAddEmailConfirm, false, 'Yaratish');
+  }
+}
+
 btnAddOne.addEventListener('click', () => {
-  customEmailPrefix.value = '';
+  resetAddEmailModal();
   addEmailModal.classList.remove('hidden');
-  customEmailPrefix.focus();
+  setTimeout(() => {
+    if (customEmailPrefix) customEmailPrefix.focus();
+  }, 60);
 });
 
-btnAddEmailCancel.addEventListener('click', () => addEmailModal.classList.add('hidden'));
-addEmailBackdrop.addEventListener('click', () => addEmailModal.classList.add('hidden'));
+btnAddEmailCancel.addEventListener('click', () => {
+  addEmailModal.classList.add('hidden');
+  resetAddEmailModal();
+});
+addEmailBackdrop.addEventListener('click', () => {
+  addEmailModal.classList.add('hidden');
+  resetAddEmailModal();
+});
+
+// REAL-TIME PREFIX VALIDATION (Agar bo'sh bo'lsa gray/disabled, agar band bo'lsa qizil yozuv va gray)
+function validateEmailPrefix() {
+  if (!customEmailPrefix) return;
+  const raw = (customEmailPrefix.value || '').trim().toLowerCase();
+  const clean = raw.replace(/[^a-z0-9_.-]/g, '');
+
+  if (checkPrefixTimeout) clearTimeout(checkPrefixTimeout);
+
+  // Agar nom kiritilmasa -> tugma kulrang (gray/disabled), xatolik yo'q
+  if (!clean) {
+    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+    if (prefixInputWrap) prefixInputWrap.classList.remove('has-error', 'has-success');
+    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+    if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
+    return;
+  }
+
+  const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
+  const fullAddress = `${clean}@${domain}`;
+
+  // 1. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
+  const isLocalDuplicate = currentEmails.some(e => (e.address || '').toLowerCase() === fullAddress);
+  if (isLocalDuplicate) {
+    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+    if (prefixInputWrap) {
+      prefixInputWrap.classList.add('has-error');
+      prefixInputWrap.classList.remove('has-success');
+    }
+    if (emailPrefixStatus) {
+      emailPrefixStatus.className = 'email-prefix-status is-error';
+      emailPrefixStatus.classList.remove('hidden');
+    }
+    if (emailPrefixStatusText) {
+      emailPrefixStatusText.textContent = 'Bu email allaqachon band';
+    }
+    return;
+  }
+
+  // Boshlanishida ruxsat beramiz, orqa fonda serverdan bandlikni tekshiramiz
+  if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
+  if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
+  if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+
+  // 2. Debounced server tekshiruvi (250ms)
+  checkPrefixTimeout = setTimeout(async () => {
+    const cur = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+    if (cur !== clean || !clean) return;
+
+    try {
+      const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}`, {
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+      });
+      const data = await res.json();
+
+      const latest = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+      if (latest !== clean) return;
+
+      if (data.isTaken) {
+        // Band bo'lsa: tugma gray bo'ladi va qizil yozuv chiqadi
+        if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+        if (prefixInputWrap) {
+          prefixInputWrap.classList.add('has-error');
+          prefixInputWrap.classList.remove('has-success');
+        }
+        if (emailPrefixStatus) {
+          emailPrefixStatus.className = 'email-prefix-status is-error';
+          emailPrefixStatus.classList.remove('hidden');
+        }
+        if (emailPrefixStatusText) {
+          emailPrefixStatusText.textContent = 'Bu email allaqachon band';
+        }
+      } else {
+        // Bo'sh (mavjud emas) -> tugma faol (bosiladigan) bo'ladi
+        if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
+        if (prefixInputWrap) {
+          prefixInputWrap.classList.remove('has-error');
+        }
+        if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+      }
+    } catch (e) {
+      // Server xatosi bo'lsa indamaymiz
+    }
+  }, 250);
+}
+
+if (customEmailPrefix) {
+  customEmailPrefix.addEventListener('input', validateEmailPrefix);
+}
 
 formAddCustomEmail.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const prefix = customEmailPrefix.value.trim();
-  addEmailModal.classList.add('hidden');
+  if (btnAddEmailConfirm && btnAddEmailConfirm.disabled) return;
+  const prefix = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+  if (!prefix) return;
+
+  setButtonLoading(btnAddEmailConfirm, true, 'Yaratish');
 
   try {
     const res = await fetch('/api/add-emails', {
@@ -494,12 +612,30 @@ formAddCustomEmail.addEventListener('submit', async (e) => {
       currentEmails.unshift(data.email);
       renderEmails();
       renderInboxTabs();
+      addEmailModal.classList.add('hidden');
+      resetAddEmailModal();
       showToast(`+1 email qo'shildi: ${data.email.address}`);
+      // Yangi yaratilgan emailga o'tish (2 sekunlik silliq skeleton bilan)
+      selectEmailTab(data.email.address);
     } else {
-      showToast(data.error || 'Email qoʻshishda xatolik');
+      const errMsg = data.error || 'Email qoʻshishda xatolik';
+      if (prefixInputWrap) {
+        prefixInputWrap.classList.add('has-error');
+        prefixInputWrap.classList.remove('has-success');
+      }
+      if (emailPrefixStatus) {
+        emailPrefixStatus.className = 'email-prefix-status is-error';
+        emailPrefixStatus.classList.remove('hidden');
+      }
+      if (emailPrefixStatusText) {
+        emailPrefixStatusText.textContent = errMsg;
+      }
+      if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
     }
   } catch (err) {
     showToast('Tarmoq xatosi');
+  } finally {
+    setButtonLoading(btnAddEmailConfirm, false, 'Yaratish');
   }
 });
 
@@ -595,14 +731,63 @@ function renderInboxTabs() {
   inboxFilterTabs.innerHTML = html;
 }
 
-window.selectEmailTab = function(address) {
+window.selectEmailTab = async function(address) {
+  if (window.innerWidth <= 768) {
+    switchMobileView('inbox');
+  }
+
   activeFilter = address;
   renderInboxTabs();
   renderEmails(); // Chap tomonda tanlangan kartani ajratib ko'rsatish
-  messagesHydrated = true; // filter o'zgardi — skeleton emas, lekin majburiy paint
-  loadMessages({ force: true });
-  if (window.innerWidth <= 768) {
-    switchMobileView('inbox');
+
+  // 1. Darhol boshqa tab xatlarini yashirib, Skeleton yuklashni ko'rsatamiz
+  currentMessages = [];
+  renderMessagesSkeleton();
+
+  // 2. Request ketma-ketlik raqami (agar foydalanuvchi tez-tez boshqa tabga bossa, eski natija ochilmaydi)
+  const reqId = ++activeTabRequestId;
+  isTabSwitching = true;
+
+  try {
+    // 3. Orqa fonda yuklash va 2 soniya davomida silliq skeleton saqlash
+    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+    const url = `/api/get-messages?email=${encodeURIComponent(address)}`;
+    const fetchPromise = fetch(url, {
+      headers: { 'Authorization': `Bearer ${currentUser.token}` }
+    }).then(async r => {
+      if (r.status === 401) {
+        logout();
+        return { success: false, unauth: true };
+      }
+      return r.json();
+    }).catch(err => ({ success: false, error: err.message }));
+
+    const [_, data] = await Promise.all([minDelayPromise, fetchPromise]);
+
+    // Agar foydalanuvchi shu 2 soniya ichida boshqa tabga o'tib ketgan bo'lsa — eskisi bekor qilinadi
+    if (reqId !== activeTabRequestId) {
+      return;
+    }
+
+    if (data && data.success) {
+      currentMessages = data.messages || [];
+      messagesHydrated = true;
+      renderMessages();
+    } else {
+      currentMessages = [];
+      messagesHydrated = true;
+      renderMessages();
+    }
+  } catch (err) {
+    if (reqId === activeTabRequestId) {
+      currentMessages = [];
+      messagesHydrated = true;
+      renderMessages();
+    }
+  } finally {
+    if (reqId === activeTabRequestId) {
+      isTabSwitching = false;
+    }
   }
 };
 
@@ -615,7 +800,7 @@ function messagesSignature(list) {
 }
 
 async function loadMessages(opts = {}) {
-  if (!currentUser) return;
+  if (!currentUser || isTabSwitching) return;
   const force = Boolean(opts.force);
   const silent = Boolean(opts.silent);
 
@@ -823,7 +1008,7 @@ window.toggleStar = function(msgId, event) {
 function startSync() {
   if (syncInterval) clearInterval(syncInterval);
   syncInterval = setInterval(() => {
-    if (currentUser) {
+    if (currentUser && !isTabSwitching) {
       loadMessages({ silent: true });
     }
   }, 15000);

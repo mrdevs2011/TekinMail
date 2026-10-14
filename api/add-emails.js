@@ -50,8 +50,7 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (duplicate) {
-      const uniqueSuffix = Math.floor(100 + Math.random() * 900);
-      finalAddress = `${customPrefix}_${uniqueSuffix}@${DOMAIN}`;
+      return jsonError(res, 409, 'Bu email allaqachon band');
     }
 
     const { data: inserted, error: insErr } = await supabase
