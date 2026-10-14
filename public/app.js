@@ -51,22 +51,34 @@ const mobileInboxCount = document.getElementById('mobileInboxCount');
 const colEmails = document.getElementById('colEmails');
 const colInbox = document.getElementById('colInbox');
 
+let currentMobileView = 'inbox';
+
 function switchMobileView(view) {
-  if (view === 'inbox') {
-    if (btnMobileShowInbox) btnMobileShowInbox.classList.add('active');
-    if (btnMobileShowEmails) btnMobileShowEmails.classList.remove('active');
-    if (colEmails) colEmails.classList.add('mobile-hidden');
-    if (colInbox) colInbox.classList.remove('mobile-hidden');
-  } else {
+  currentMobileView = view;
+  if (view === 'emails') {
     if (btnMobileShowEmails) btnMobileShowEmails.classList.add('active');
     if (btnMobileShowInbox) btnMobileShowInbox.classList.remove('active');
     if (colEmails) colEmails.classList.remove('mobile-hidden');
     if (colInbox) colInbox.classList.add('mobile-hidden');
+  } else {
+    if (btnMobileShowInbox) btnMobileShowInbox.classList.add('active');
+    if (btnMobileShowEmails) btnMobileShowEmails.classList.remove('active');
+    if (colEmails) colEmails.classList.add('mobile-hidden');
+    if (colInbox) colInbox.classList.remove('mobile-hidden');
   }
 }
 
 if (btnMobileShowEmails) btnMobileShowEmails.addEventListener('click', () => switchMobileView('emails'));
 if (btnMobileShowInbox) btnMobileShowInbox.addEventListener('click', () => switchMobileView('inbox'));
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth <= 900) {
+    switchMobileView(currentMobileView);
+  } else {
+    if (colEmails) colEmails.classList.remove('mobile-hidden');
+    if (colInbox) colInbox.classList.remove('mobile-hidden');
+  }
+});
 
 // DOM MODALS
 const addEmailModal = document.getElementById('addEmailModal');
@@ -325,8 +337,8 @@ function showWorkspace() {
   badgeFullName.textContent = currentUser.full_name || 'Foydalanuvchi';
   badgeUsername.textContent = '@' + (currentUser.username || 'user');
 
-  if (window.innerWidth <= 768) {
-    switchMobileView('emails');
+  if (window.innerWidth <= 900) {
+    switchMobileView('inbox');
   }
 
   loadEmails();
@@ -477,8 +489,9 @@ function resetAddEmailModal() {
   if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
   if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
   if (btnAddEmailConfirm) {
+    btnAddEmailConfirm.classList.remove('loading');
+    btnAddEmailConfirm.innerHTML = 'Yaratish';
     btnAddEmailConfirm.disabled = true;
-    setButtonLoading(btnAddEmailConfirm, false, 'Yaratish');
   }
 }
 
@@ -647,7 +660,11 @@ formAddCustomEmail.addEventListener('submit', async (e) => {
   } catch (err) {
     showToast('Tarmoq xatosi');
   } finally {
-    setButtonLoading(btnAddEmailConfirm, false, 'Yaratish');
+    if (btnAddEmailConfirm) {
+      btnAddEmailConfirm.classList.remove('loading');
+      btnAddEmailConfirm.innerHTML = 'Yaratish';
+      btnAddEmailConfirm.disabled = true;
+    }
   }
 });
 
@@ -744,7 +761,7 @@ function renderInboxTabs() {
 }
 
 window.selectEmailTab = async function(address) {
-  if (window.innerWidth <= 768) {
+  if (window.innerWidth <= 900) {
     switchMobileView('inbox');
   }
 
@@ -922,18 +939,12 @@ function renderMessages() {
 
     return `
       <div class="msg-row" onclick="openMessageModal('${msg.id}')">
-        <div class="msg-check" onclick="event.stopPropagation()">
-          <input type="checkbox">
-        </div>
         <div class="msg-sender" title="${escapeHtml(sender)}">${escapeHtml(sender)}</div>
         <div class="msg-subject-snippet">
           <strong>${escapeHtml(msg.subject || 'Welcome to Supabase')}</strong>
           <span>${escapeHtml(snippet)}...</span>
         </div>
         <div class="msg-time">${timeFormatted}</div>
-        <div class="msg-star ${msg.is_starred ? 'active' : ''}" onclick="toggleStar('${msg.id}', event)">
-          ${msg.is_starred ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
-        </div>
       </div>
     `;
   }).join('');
