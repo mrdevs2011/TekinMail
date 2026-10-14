@@ -531,17 +531,10 @@ function validateEmailPrefix() {
     return;
   }
 
-  // 2. Minimum uzunlik tekshiruvi (kamida 2 ta belgi)
-  if (clean.length < 2) {
-    if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
-    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
-    return;
-  }
-
   const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
   const fullAddress = `${clean}@${domain}`;
 
-  // 3. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
+  // 2. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
   const isLocalDuplicate = currentEmails.some(e => (e.address || '').toLowerCase() === fullAddress);
   if (isLocalDuplicate) {
     if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
@@ -563,10 +556,10 @@ function validateEmailPrefix() {
   if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
   if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
 
-  // 4. Serverdan bandlikni tekshirish (180ms tezkor debounce)
+  // 3. Serverdan bandlikni tekshirish (150ms tezkor debounce)
   checkPrefixTimeout = setTimeout(async () => {
     const cur = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-    if (cur !== clean || clean.length < 2) return;
+    if (cur !== clean || !clean) return;
 
     try {
       const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}`, {
