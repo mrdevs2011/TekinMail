@@ -499,7 +499,7 @@ addEmailBackdrop.addEventListener('click', () => {
   resetAddEmailModal();
 });
 
-// REAL-TIME PREFIX VALIDATION (Agar bo'sh bo'lsa gray/disabled, agar band bo'lsa qizil yozuv va gray)
+// REAL-TIME PREFIX VALIDATION (Doimo gray, faqat hamma narsa to'g'ri bo'lgandagina oq/faol bo'ladi)
 function validateEmailPrefix() {
   if (!customEmailPrefix) return;
   const raw = (customEmailPrefix.value || '').trim().toLowerCase();
@@ -507,19 +507,28 @@ function validateEmailPrefix() {
 
   if (checkPrefixTimeout) clearTimeout(checkPrefixTimeout);
 
-  // Agar nom kiritilmasa -> tugma kulrang (gray/disabled), xatolik yo'q
+  // Har doim kiritish paytida tugma kulrang (gray/disabled) bo'lib turadi
+  if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+
+  // 1. Agar nom kiritilmasa -> tugma kulrang (gray), xatolik ko'rsatilmaydi
   if (!clean) {
-    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
     if (prefixInputWrap) prefixInputWrap.classList.remove('has-error', 'has-success');
     if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
     if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
     return;
   }
 
+  // 2. Minimum uzunlik tekshiruvi (kamida 2 ta belgi)
+  if (clean.length < 2) {
+    if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
+    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+    return;
+  }
+
   const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
   const fullAddress = `${clean}@${domain}`;
 
-  // 1. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
+  // 3. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
   const isLocalDuplicate = currentEmails.some(e => (e.address || '').toLowerCase() === fullAddress);
   if (isLocalDuplicate) {
     if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
@@ -537,15 +546,14 @@ function validateEmailPrefix() {
     return;
   }
 
-  // Boshlanishida ruxsat beramiz, orqa fonda serverdan bandlikni tekshiramiz
-  if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
+  // Hali serverdan tasdiqlanmagan — shuning uchun tugma baribir GRAY bo'lib turadi!
   if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
   if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
 
-  // 2. Debounced server tekshiruvi (250ms)
+  // 4. Serverdan bandlikni tekshirish (180ms tezkor debounce)
   checkPrefixTimeout = setTimeout(async () => {
     const cur = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-    if (cur !== clean || !clean) return;
+    if (cur !== clean || clean.length < 2) return;
 
     try {
       const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}`, {
@@ -557,7 +565,7 @@ function validateEmailPrefix() {
       if (latest !== clean) return;
 
       if (data.isTaken) {
-        // Band bo'lsa: tugma gray bo'ladi va qizil yozuv chiqadi
+        // Band bo'lsa: tugma doimo gray bo'lib qoladi va qizil yozuv chiqadi
         if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
         if (prefixInputWrap) {
           prefixInputWrap.classList.add('has-error');
@@ -570,18 +578,22 @@ function validateEmailPrefix() {
         if (emailPrefixStatusText) {
           emailPrefixStatusText.textContent = 'Bu email allaqachon band';
         }
-      } else {
-        // Bo'sh (mavjud emas) -> tugma faol (bosiladigan) bo'ladi
+      } else if (data.available) {
+        // HAMMA NARSA TO'G'RI BO'LGANDAGINA OQ (ACTIVE) BO'LADI!
         if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
         if (prefixInputWrap) {
           prefixInputWrap.classList.remove('has-error');
         }
         if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+      } else {
+        // Noto'g'ri bo'lsa gray
+        if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
       }
     } catch (e) {
-      // Server xatosi bo'lsa indamaymiz
+      // Server xatosi bo'lsa ham tugma gray qoladi
+      if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
     }
-  }, 250);
+  }, 180);
 }
 
 if (customEmailPrefix) {
