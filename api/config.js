@@ -9,8 +9,12 @@ export default async function handler(req, res) {
     return handleOptions(req, res, 'GET, OPTIONS');
   }
 
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  if (req.method === 'HEAD') {
+    return res.status(200).end();
   }
 
   // 1. Agar rasm proxy so'rovi bo'lsa (/api/config?url=... yoki /api/config?img=...)
