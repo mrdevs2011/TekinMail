@@ -119,22 +119,56 @@ let currentEmails = [];
 let currentMessages = [];
 let activeFilter = 'all'; // 'all' yoki email address
 let activeDomain = '';
+let availableDomains = []; // multi-domain
 const INBOX_PAGE_SIZE = 15;
 let hasMoreMessages = true;
 let isLoadingMore = false;
 
-// Public config (MAIL_DOMAIN from server)
+// Public config (MAIL_DOMAIN / MAIL_DOMAINS from server)
 async function loadPublicConfig() {
-  // Public sahifada domen ko'rsatilmaydi — faqat login qilingan workspace da
   try {
     const res = await fetch('/api/config');
     const data = await res.json();
-    if (data.success && data.domain) {
-      activeDomain = data.domain;
+    if (data.success) {
+      if (Array.isArray(data.domains) && data.domains.length) {
+        availableDomains = data.domains.map(d => String(d).toLowerCase());
+        activeDomain = data.domain || availableDomains[0] || '';
+      } else if (data.domain) {
+        activeDomain = data.domain;
+        availableDomains = [data.domain];
+      }
+      populateDomainSelect();
     }
   } catch (e) {
     console.warn('config load failed', e);
   }
+}
+
+function populateDomainSelect() {
+  const wrap = document.getElementById('domainSelectWrap');
+  const sel = document.getElementById('domainSelect');
+  if (!wrap || !sel) return;
+  sel.innerHTML = '';
+  if (availableDomains.length <= 1) {
+    wrap.classList.add('hidden');
+    return;
+  }
+  wrap.classList.remove('hidden');
+  availableDomains.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = '@' + d;
+    if (d === activeDomain) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function getSelectedDomain() {
+  const sel = document.getElementById('domainSelect');
+  if (sel && !document.getElementById('domainSelectWrap')?.classList.contains('hidden') && sel.value) {
+    return sel.value.trim().toLowerCase();
+  }
+  return (activeDomain || availableDomains[0] || 'bombaclat.uz').trim().toLowerCase();
 }
 
 function applyDomainToWorkspace() {
@@ -569,7 +603,7 @@ function validateEmailPrefix() {
     return;
   }
 
-  const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
+  const domain = getSelectedDomain();
   const fullAddress = `${clean}@${domain}`;
 
   // 2. Tezkor mahalliy tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi) — 0ms!
@@ -597,7 +631,8 @@ function validateEmailPrefix() {
 
     checkPrefixAbortController = new AbortController();
     try {
-      const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}`, {
+      const domain = getSelectedDomain();
+      const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}&domain=${encodeURIComponent(domain)}`, {
         headers: { 'Authorization': `Bearer ${currentUser.token}` },
         signal: checkPrefixAbortController.signal
       });
@@ -615,6 +650,18 @@ function validateEmailPrefix() {
 if (customEmailPrefix) {
   customEmailPrefix.addEventListener('input', validateEmailPrefix);
 }
+const domainSelectEl = document.getElementById('domainSelect');
+if (domainSelectEl) {
+  domainSelectEl.addEventListener('change', () => {
+    const d = domainSelectEl.value;
+    if (d) {
+      activeDomain = d;
+      if (domainSuffixLabel) domainSuffixLabel.textContent = '@' + d;
+    }
+    prefixCheckCache.clear();
+    validateEmailPrefix();
+  });
+}
 
 formAddCustomEmail.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -631,7 +678,7 @@ formAddCustomEmail.addEventListener('submit', async (e) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${currentUser.token}`
       },
-      body: JSON.stringify({ prefix })
+      body: JSON.stringify({ prefix, domain: getSelectedDomain() })
     });
 
     const data = await res.json();

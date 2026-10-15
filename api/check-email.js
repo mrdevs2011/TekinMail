@@ -1,10 +1,10 @@
 import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
-import { getBearerToken, setSecurityHeaders, jsonError, jsonOk, MAX_PREFIX_LEN } from './_utils.js';
+import {
+  getBearerToken, setSecurityHeaders, jsonError, jsonOk, MAX_PREFIX_LEN,
+  getPrimaryDomain, isAllowedDomain, getAllowedDomains
+} from './_utils.js';
 
-const DOMAIN = (process.env.MAIL_DOMAIN || 'bombaclat.uz').trim().toLowerCase();
-
-// Tezkor in-memory token kesh (60 soniya) — har bir harf kiritilganda Supabase Auth va users jadvaliga ortiqcha murojaat qilmaslik uchun
 const tokenCache = new Map();
 
 async function fastVerifyToken(token) {
@@ -37,17 +37,28 @@ export default async function handler(req, res) {
   try {
     const token = getBearerToken(req);
     const userId = await fastVerifyToken(token);
-    if (!userId) return jsonError(res, 401, 'Avtorizatsiyadan oʻtmagan');
+    if (!userId) return jsonError(res, 401, 'Avtorizatsiyadan o\u02bbtmagan');
+
+    const domains = getAllowedDomains();
+    if (!domains.length) {
+      return jsonError(res, 500, 'MAIL_DOMAIN sozlanmagan');
+    }
 
     let prefix = (req.query?.prefix || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
     if (!prefix) {
-      return jsonOk(res, { available: false, error: 'Prefiks boʻsh' });
+      return jsonOk(res, { available: false, error: 'Prefiks bo\u02bbsh' });
     }
     if (prefix.length > MAX_PREFIX_LEN) {
       prefix = prefix.slice(0, MAX_PREFIX_LEN);
     }
 
-    const targetAddress = `${prefix}@${DOMAIN}`;
+    let requestedDomain = (req.query?.domain || '').trim().toLowerCase();
+    if (requestedDomain && !isAllowedDomain(requestedDomain)) {
+      return jsonError(res, 400, 'Bu domen ruxsat etilmagan');
+    }
+    const domain = requestedDomain || getPrimaryDomain();
+
+    const targetAddress = `${prefix}@${domain}`;
     const supabase = getSupabase();
     const { data: duplicate } = await supabase
       .from('emails')
@@ -61,7 +72,8 @@ export default async function handler(req, res) {
     return jsonOk(res, {
       available: !duplicate,
       isTaken: Boolean(duplicate),
-      address: targetAddress
+      address: targetAddress,
+      domain
     });
   } catch (err) {
     console.error('[check-email]', err.message);

@@ -78,12 +78,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2. Standart public config
-  const domain = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
+  // 2. Standart public config (multi-domain)
+  const multi = (process.env.MAIL_DOMAINS || '').trim();
+  let domains = [];
+  if (multi) {
+    domains = multi.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+  } else {
+    const single = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
+    if (single) domains = [single];
+  }
+  const domain = domains[0] || '';
 
   return res.status(200).json({
     success: true,
     domain,
+    domains,
     appName: process.env.APP_NAME || 'TekinMail'
   });
 }

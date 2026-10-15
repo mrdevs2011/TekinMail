@@ -3,10 +3,9 @@ import { setCors, handleOptions } from './_cors.js';
 import { verifySessionToken } from './_auth.js';
 import {
   parseBody, getBearerToken, setSecurityHeaders,
-  jsonError, jsonOk, MAX_PREFIX_LEN
+  jsonError, jsonOk, MAX_PREFIX_LEN,
+  getAllowedDomains, getPrimaryDomain, isAllowedDomain
 } from './_utils.js';
-
-const DOMAIN = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
 
 export default async function handler(req, res) {
   setCors(req, res, 'POST, OPTIONS');
@@ -20,18 +19,24 @@ export default async function handler(req, res) {
     const body = parseBody(req);
     const token = getBearerToken(req, body);
     const session = await verifySessionToken(token);
-    if (!session) return jsonError(res, 401, 'Avtorizatsiyadan oʻtmagan');
+    if (!session) return jsonError(res, 401, 'Avtorizatsiyadan o\u02bbtmagan');
 
-    if (!DOMAIN) {
-      return jsonError(res, 500, 'MAIL_DOMAIN sozlanmagan. Vercel Environment Variables da qoʻshing.');
+    const domains = getAllowedDomains();
+    if (!domains.length) {
+      return jsonError(res, 500, 'MAIL_DOMAIN / MAIL_DOMAINS sozlanmagan. Vercel Environment Variables da qo\u02bbshing.');
     }
+
+    let requestedDomain = (body?.domain || '').trim().toLowerCase();
+    if (requestedDomain && !isAllowedDomain(requestedDomain)) {
+      return jsonError(res, 400, 'Bu domen ruxsat etilmagan');
+    }
+    const domain = requestedDomain || getPrimaryDomain();
 
     let customPrefix = (body?.prefix || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
     if (customPrefix.length > MAX_PREFIX_LEN) {
       customPrefix = customPrefix.slice(0, MAX_PREFIX_LEN);
     }
 
-    // Agar foydalanuvchi prefiks kiritmagan bo'lsa: username_count qilib olamiz
     if (!customPrefix) {
       const { data: existingEmails } = await supabase
         .from('emails')
@@ -41,11 +46,9 @@ export default async function handler(req, res) {
       customPrefix = count === 0 ? session.username : `${session.username}_${count + 1}`;
     }
 
-    // Foydalanuvchi qanday nom kiritgan bo'lsa (masalan "1"), aynan o'sha nom bilan email ochiladi!
-    // Hech qanday boshqa ism (masalan "sanjar") o'zboshimchalik bilan qo'yilmaydi!
-    const finalAddress = `${customPrefix}@${DOMAIN}`;
+    // Foydalanuvchi kiritgan prefiks aynan ishlatiladi
+    const finalAddress = `${customPrefix}@${domain}`;
 
-    // Bandligini tekshiramiz
     const { data: duplicate } = await supabase
       .from('emails')
       .select('id')

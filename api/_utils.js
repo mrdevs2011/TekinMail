@@ -40,3 +40,24 @@ export function jsonOk(res, data = {}) {
 
 /** Max prefix length for custom email */
 export const MAX_PREFIX_LEN = 64;
+
+/** Allowed mail domains: MAIL_DOMAINS (comma-separated) or MAIL_DOMAIN fallback */
+export function getAllowedDomains() {
+  const multi = (process.env.MAIL_DOMAINS || '').trim();
+  if (multi) {
+    return multi.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+  }
+  const single = (process.env.MAIL_DOMAIN || '').trim().toLowerCase();
+  return single ? [single] : [];
+}
+
+export function getPrimaryDomain() {
+  const domains = getAllowedDomains();
+  return domains[0] || '';
+}
+
+export function isAllowedDomain(domain) {
+  if (!domain) return false;
+  const d = String(domain).trim().toLowerCase();
+  return getAllowedDomains().includes(d);
+}

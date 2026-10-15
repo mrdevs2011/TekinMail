@@ -125,3 +125,13 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON public.audit_logs(user_id);
 
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 -- Faqat Service Role yozadi/o'qiydi.
+
+-- ========================================================
+-- MULTI-DOMAIN + CLEANUP INDEXES
+-- ========================================================
+-- messages.created_at index for TTL cleanup cron
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at);
+
+-- Optional: store domain separately (address already contains it)
+-- MAIL_DOMAINS env: comma-separated list e.g. bombaclat.uz,other.uz
+-- MESSAGE_TTL_DAYS (default 30), CRON_SECRET for /api/cleanup-old-messages
