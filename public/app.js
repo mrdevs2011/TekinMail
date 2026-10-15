@@ -912,6 +912,49 @@ function cleanSnippetText(text) {
   return clean.substring(0, 80);
 }
 
+// Clean sender name and sender email (strips bounce addresses, double brackets, and quotes)
+function formatSenderInfo(rawName, rawAddress) {
+  let name = (rawName || '').trim();
+  let email = (rawAddress || '').trim();
+
+  // 1. Agar rawName ichida email bo'lsa: "Anthropic" <no-reply@mail.anthropic.com>
+  const match = name.match(/^"?([^"<]*)"?\s*<([^>]+)>/);
+  if (match) {
+    name = match[1].trim();
+    const extractedEmail = match[2].trim();
+    if (!email || email.includes('bounces+') || email.includes('bounce-') || !email.includes('@')) {
+      email = extractedEmail;
+    }
+  } else if (name.includes('@') && !name.includes(' ')) {
+    if (!email || email.includes('bounces+')) {
+      email = name.replace(/[<>]/g, '').trim();
+    }
+  }
+
+  // 2. Qo'shtirnoq va keraksiz burchak qavslarni tozalaymiz
+  name = name.replace(/^["']+|["']+$/g, '').trim();
+  email = email.replace(/[<>]/g, '').trim();
+
+  // 3. Agar name bo'sh bo'lsa, emaildan olamiz
+  if (!name) {
+    if (email && email.includes('@')) {
+      name = email.split('@')[0];
+    } else {
+      name = 'Xabarchi';
+    }
+  }
+
+  return { displayName: name, email };
+}
+
+function formatDateFull(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function renderMessages() {
   if (mobileInboxCount) mobileInboxCount.textContent = currentMessages.length;
 
@@ -928,13 +971,14 @@ function renderMessages() {
   messagesListContainer.innerHTML = currentMessages.map(msg => {
     const timeFormatted = formatTime(msg.created_at);
     const snippet = cleanSnippetText(msg.body);
-    const sender = msg.from_name || 'Supabase';
+    const senderInfo = formatSenderInfo(msg.from_name, msg.from_address);
+    const sender = senderInfo.displayName || 'Xabarchi';
 
     return `
       <div class="msg-row" onclick="openMessageModal('${msg.id}')">
         <div class="msg-sender" title="${escapeHtml(sender)}">${escapeHtml(sender)}</div>
         <div class="msg-subject-snippet">
-          <strong>${escapeHtml(msg.subject || 'Welcome to Supabase')}</strong>
+          <strong>${escapeHtml(msg.subject || 'Mavzusiz')}</strong>
           <span>${escapeHtml(snippet)}...</span>
         </div>
         <div class="msg-time">${timeFormatted}</div>
@@ -952,10 +996,14 @@ window.openMessageModal = function(msgIdOrObj) {
           ? adminInspectData.messages.find(m => m.id === msgIdOrObj) : null));
   if (!msg) return;
 
+  const senderInfo = formatSenderInfo(msg.from_name, msg.from_address);
+
   msgDetailSubject.textContent = msg.subject || 'Mavzusiz';
-  msgDetailFrom.textContent = `Kimdan: ${msg.from_name || ''} <${msg.from_address || ''}>`;
+  msgDetailFrom.textContent = senderInfo.email
+    ? `Kimdan: ${senderInfo.displayName} <${senderInfo.email}>`
+    : `Kimdan: ${senderInfo.displayName}`;
   msgDetailTo.textContent = `Kimga: ${msg.email_address}`;
-  msgDetailDate.textContent = `Sana: ${new Date(msg.created_at).toLocaleString()}`;
+  msgDetailDate.textContent = `Sana: ${formatDateFull(msg.created_at)}`;
 
   msgDetailBody.innerHTML = '';
 
@@ -1443,7 +1491,7 @@ function renderAdminInspectMessages() {
           <span style="font-size:11px; color:var(--text-dim); flex-shrink:0;">${date}</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:12px; color:var(--text-secondary);">${escapeHtml(msg.from_name || msg.from_address || 'Noma\u02bclum')}</span>
+          <span style="font-size:12px; color:var(--text-secondary);">${escapeHtml(formatSenderInfo(msg.from_name, msg.from_address).displayName)}</span>
           <span style="font-size:11px; color:var(--text-dim);">${escapeHtml(msg.email_address || '')}</span>
         </div>
         ${snippet ? `<div style="font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(snippet)}…</div>` : ''}

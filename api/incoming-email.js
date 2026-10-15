@@ -109,6 +109,47 @@ function parseEmailPayload(rawText, initialBody, initialHtml) {
   return { text, html };
 }
 
+// Parse sender into clean display name and valid email address
+function parseSender(fromNameRaw, fromAddressRaw, fallbackDomain = 'mail.local') {
+  let displayName = (fromNameRaw || '').trim();
+  let email = (fromAddressRaw || '').trim();
+
+  // If fromNameRaw has format: "Anthropic" <no-reply@mail.anthropic.com>
+  const match = displayName.match(/^"?([^"<]*)"?\s*<([^>]+)>/);
+  if (match) {
+    displayName = match[1].trim();
+    const extractedEmail = match[2].trim().toLowerCase();
+    // If fromAddress was a bounce address, empty, or missing @, use the clean extracted email
+    if (!email || email.includes('bounces+') || email.includes('bounce-') || !email.includes('@')) {
+      email = extractedEmail;
+    }
+  } else if (displayName.includes('@') && !displayName.includes(' ')) {
+    // If displayName is actually an email address
+    if (!email || email.includes('bounces+')) {
+      email = displayName.replace(/[<>]/g, '').trim().toLowerCase();
+    }
+  }
+
+  // Remove surrounding quotes and brackets
+  displayName = displayName.replace(/^["']+|["']+$/g, '').trim();
+  email = email.replace(/[<>]/g, '').trim().toLowerCase();
+
+  // If displayName is empty, extract from email or fallback
+  if (!displayName) {
+    if (email && email.includes('@')) {
+      displayName = email.split('@')[0];
+    } else {
+      displayName = 'Xabarchi';
+    }
+  }
+
+  if (!email) {
+    email = `no-reply@${fallbackDomain}`;
+  }
+
+  return { displayName, email };
+}
+
 export default async function handler(req, res) {
   setCors(req, res, 'POST, OPTIONS');
   setSecurityHeaders(res);
@@ -139,10 +180,13 @@ export default async function handler(req, res) {
     }
 
     const to_email = (body?.to || body?.recipient || body?.email_address || '').trim().toLowerCase();
-    let from_name = decodeMimeHeader(body?.from_name || body?.sender_name || '');
+    const rawFromName = decodeMimeHeader(body?.from_name || body?.sender_name || '');
     const _fallbackDomain = (process.env.MAIL_DOMAIN || 'mail.local').trim().toLowerCase();
-    let from_address = body?.from || body?.from_address || `no-reply@${_fallbackDomain}`;
+    const rawFromAddress = body?.from || body?.from_address || '';
     let subject = decodeMimeHeader(body?.subject || 'Mavzusiz');
+
+    // Toza nom va email manzilini ajratib olamiz
+    const { displayName: from_name, email: from_address } = parseSender(rawFromName, rawFromAddress, _fallbackDomain);
 
     // MIME va HTML/Plain textni 1:1 mukammal ajratish
     const parsed = parseEmailPayload(body?.raw || '', body?.body || body?.text || '', body?.html || '');
@@ -156,17 +200,6 @@ export default async function handler(req, res) {
     
     if (!to_email) {
       return res.status(400).json({ success: false, error: 'to_email is required' });
-    }
-
-    // From name agar email bilan aralash bo'lsa tozalash (masalan: "Anthropic" <no-reply@...>)
-    if (!from_name && from_address) {
-      const match = from_address.match(/^"?([^"<]+)"?\s*<([^>]+)>/);
-      if (match) {
-        from_name = match[1].trim();
-        from_address = match[2].trim();
-      } else {
-        from_name = from_address.split('@')[0];
-      }
     }
 
     // Bu email egasini topamiz
