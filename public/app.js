@@ -1287,12 +1287,10 @@ function tmBuildEmailDoc(rawHtml) {
     src = src.replace(/^\/\//, 'https://').replace(/^http:\/\//i, 'https://');
 
     const lower = tag.toLowerCase();
-    const dim = (name) => {
-      const a = lower.match(new RegExp('(?:\\s|["\\';])' + name + '\\s*[=:]\\s*["\\']?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:px)?', 'i'));
-      return a ? Number(a[1]) : null;
-    };
-    const w = dim('width');
-    const hh = dim('height');
+    const wm = lower.match(/\bwidth\s*[=:]\s*["']?\s*(\d+)/i);
+    const hm = lower.match(/\bheight\s*[=:]\s*["']?\s*(\d+)/i);
+    const w = wm ? Number(wm[1]) : null;
+    const hh = hm ? Number(hm[1]) : null;
     if (tmIsTrackingPixel(src, lower, w, hh)) {
       return '<img src="' + TM_PIXEL + '" width="1" height="1" style="display:none!important" alt="">';
     }
