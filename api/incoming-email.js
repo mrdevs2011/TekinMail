@@ -7,17 +7,20 @@ function decodeQuotedPrintable(str) {
   if (!str) return '';
   // Faqat Quoted-Printable formatida bo'lsa (masalan =3D yoki =\r\n bo'lsa) dekodlaymiz.
   // Agar allaqachon dekodlangan bo'lsa, URL query paramlaridagi =20, =40 kabilarni buzmaslik uchun tegmaymiz!
+  // Oddiy ="..." atributlari bor bo'lsa — allaqachon dekodlangan HTML, tegmaymiz
+  if (/<[a-z][^>]*\s[a-z-]+="[^"]*"/i.test(str)) return str;
   if (!/=3D/i.test(str) && !/=(?:\r\n|\n|\r)/.test(str)) {
     return str;
   }
   const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
+  const dec = new TextDecoder('utf-8', { fatal: true });
   return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
     try {
       const bytes = [];
       for (let i = 0; i < match.length; i += 3) {
         bytes.push(parseInt(match.substr(i + 1, 2), 16));
       }
-      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+      return dec.decode(new Uint8Array(bytes));
     } catch (e) {
       return match;
     }

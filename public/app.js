@@ -515,31 +515,15 @@ addEmailBackdrop.addEventListener('click', () => {
   resetAddEmailModal();
 });
 
-// REAL-TIME PREFIX VALIDATION (Doimo gray, faqat hamma narsa to'g'ri bo'lgandagina oq/faol bo'ladi)
-function validateEmailPrefix() {
-  if (!customEmailPrefix) return;
-  const raw = (customEmailPrefix.value || '').trim().toLowerCase();
-  const clean = raw.replace(/[^a-z0-9_.-]/g, '');
+// REAL-TIME PREFIX VALIDATION (Tezkor kesh va chaqmoqdek tez 50ms debounce)
+const prefixCheckCache = new Map(); // cleanPrefix -> { isTaken, available }
+let checkPrefixAbortController = null;
 
-  if (checkPrefixTimeout) clearTimeout(checkPrefixTimeout);
+function applyPrefixValidationResult(clean, data) {
+  const latest = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+  if (latest !== clean) return;
 
-  // Har doim kiritish paytida tugma kulrang (gray/disabled) bo'lib turadi
-  if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
-
-  // 1. Agar nom kiritilmasa -> tugma kulrang (gray), xatolik ko'rsatilmaydi
-  if (!clean) {
-    if (prefixInputWrap) prefixInputWrap.classList.remove('has-error', 'has-success');
-    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
-    if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
-    return;
-  }
-
-  const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
-  const fullAddress = `${clean}@${domain}`;
-
-  // 2. Tezkor tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi)
-  const isLocalDuplicate = currentEmails.some(e => (e.address || '').toLowerCase() === fullAddress);
-  if (isLocalDuplicate) {
+  if (data.isTaken) {
     if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
     if (prefixInputWrap) {
       prefixInputWrap.classList.add('has-error');
@@ -552,57 +536,80 @@ function validateEmailPrefix() {
     if (emailPrefixStatusText) {
       emailPrefixStatusText.textContent = 'Bu email allaqachon band';
     }
+  } else if (data.available) {
+    // HAMMA NARSA TO'G'RI BO'LGANDAGINA OQ (ACTIVE) BO'LADI!
+    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
+    if (prefixInputWrap) {
+      prefixInputWrap.classList.remove('has-error');
+    }
+    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+    if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
+  } else {
+    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+  }
+}
+
+function validateEmailPrefix() {
+  if (!customEmailPrefix) return;
+  const raw = (customEmailPrefix.value || '').trim().toLowerCase();
+  const clean = raw.replace(/[^a-z0-9_.-]/g, '');
+
+  if (checkPrefixTimeout) clearTimeout(checkPrefixTimeout);
+  if (checkPrefixAbortController) {
+    checkPrefixAbortController.abort();
+    checkPrefixAbortController = null;
+  }
+
+  // 1. Agar nom kiritilmasa -> tugma kulrang (gray), xatolik ko'rsatilmaydi
+  if (!clean) {
+    if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
+    if (prefixInputWrap) prefixInputWrap.classList.remove('has-error', 'has-success');
+    if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
+    if (emailPrefixStatusText) emailPrefixStatusText.textContent = '';
+    return;
+  }
+
+  const domain = (activeDomain || 'bombaclat.uz').trim().toLowerCase();
+  const fullAddress = `${clean}@${domain}`;
+
+  // 2. Tezkor mahalliy tekshiruv (foydalanuvchining o'z emaillari ro'yxatida bormi) — 0ms!
+  const isLocalDuplicate = currentEmails.some(e => (e.address || '').toLowerCase() === fullAddress);
+  if (isLocalDuplicate) {
+    applyPrefixValidationResult(clean, { isTaken: true, available: false });
+    return;
+  }
+
+  // 3. Brauzer xotirasidagi keshda bormi (oldingi tekshiruvlar) — 0ms darhol!
+  if (prefixCheckCache.has(clean)) {
+    applyPrefixValidationResult(clean, prefixCheckCache.get(clean));
     return;
   }
 
   // Hali serverdan tasdiqlanmagan — shuning uchun tugma baribir GRAY bo'lib turadi!
+  if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
   if (prefixInputWrap) prefixInputWrap.classList.remove('has-error');
   if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
 
-  // 3. Serverdan bandlikni tekshirish (150ms tezkor debounce)
+  // 4. Serverdan bandlikni o'ta tezkor (50ms) tekshirish
   checkPrefixTimeout = setTimeout(async () => {
     const cur = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
     if (cur !== clean || !clean) return;
 
+    checkPrefixAbortController = new AbortController();
     try {
       const res = await fetch(`/api/check-email?prefix=${encodeURIComponent(clean)}`, {
-        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+        headers: { 'Authorization': `Bearer ${currentUser.token}` },
+        signal: checkPrefixAbortController.signal
       });
       const data = await res.json();
-
-      const latest = (customEmailPrefix.value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-      if (latest !== clean) return;
-
-      if (data.isTaken) {
-        // Band bo'lsa: tugma doimo gray bo'lib qoladi va qizil yozuv chiqadi
-        if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
-        if (prefixInputWrap) {
-          prefixInputWrap.classList.add('has-error');
-          prefixInputWrap.classList.remove('has-success');
-        }
-        if (emailPrefixStatus) {
-          emailPrefixStatus.className = 'email-prefix-status is-error';
-          emailPrefixStatus.classList.remove('hidden');
-        }
-        if (emailPrefixStatusText) {
-          emailPrefixStatusText.textContent = 'Bu email allaqachon band';
-        }
-      } else if (data.available) {
-        // HAMMA NARSA TO'G'RI BO'LGANDAGINA OQ (ACTIVE) BO'LADI!
-        if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = false;
-        if (prefixInputWrap) {
-          prefixInputWrap.classList.remove('has-error');
-        }
-        if (emailPrefixStatus) emailPrefixStatus.classList.add('hidden');
-      } else {
-        // Noto'g'ri bo'lsa gray
+      prefixCheckCache.set(clean, data);
+      applyPrefixValidationResult(clean, data);
+    } catch (e) {
+      if (e.name !== 'AbortError') {
         if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
       }
-    } catch (e) {
-      // Server xatosi bo'lsa ham tugma gray qoladi
-      if (btnAddEmailConfirm) btnAddEmailConfirm.disabled = true;
     }
-  }, 180);
+  }, 50);
 }
 
 if (customEmailPrefix) {
@@ -973,19 +980,21 @@ btnRefreshInbox.addEventListener('click', () => {
 // ==========================================
 function decodeQuotedPrintableClient(str) {
   if (!str) return '';
-  // Faqat Quoted-Printable formatida saqlangan bo'lsa dekodlaymiz.
-  // Agar allaqachon dekodlangan bo'lsa, URL query paramlaridagi =20, =40 kabilarni buzmaslik uchun tegmaymiz!
+  // Allaqachon dekodlangan HTML (oddiy ="..." atributlari bor) ga tegmaymiz:
+  // aks holda URL ichidagi =AB kabi qismlar buzilib, rasmlar yuklanmay qoladi.
+  if (/<[a-z][^>]*\s[a-z-]+="[^"]*"/i.test(str)) return str;
   if (!/=3D/i.test(str) && !/=(?:\r\n|\n|\r)/.test(str)) {
     return str;
   }
   const unsoft = str.replace(/=(?:\r\n|\n|\r)/g, '');
+  const dec = new TextDecoder('utf-8', { fatal: true });
   return unsoft.replace(/((?:=[0-9A-Fa-f]{2})+)/g, (match) => {
     try {
       const bytes = [];
       for (let i = 0; i < match.length; i += 3) {
         bytes.push(parseInt(match.substr(i + 1, 2), 16));
       }
-      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+      return dec.decode(new Uint8Array(bytes));
     } catch (e) {
       return match;
     }
@@ -1089,31 +1098,175 @@ function renderMessages() {
   }).join('');
 }
 
-function extractVerificationDetails(subject, body, html) {
-  const content = `${subject || ''}\n${body || ''}\n${html || ''}`;
+function tmHtmlToText(html) {
+  return String(html || '')
+    .replace(/<(style|script|head)\b[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<br\s*\/?>|<\/(?:p|div|tr|td|th|li|h[1-6]|table|center)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/[\u200b-\u200f\u2060\ufeff\u034f]/g, '')
+    .replace(/[ \t\r\f\v]+/g, ' ');
+}
 
-  let code = null;
+// Kod aniqlashdan oldin matnni tozalaymiz: havolalar, email, vaqt va sanalardagi raqamlar kod deb olinmasin
+function tmCleanForCode(s) {
+  return String(s || '')
+    .replace(/https?:\/\/[^\s"'<>)]+/gi, ' ')
+    .replace(/\bwww\.[^\s"'<>)]+/gi, ' ')
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, ' ')
+    .replace(/&#?\w+;/g, ' ')
+    .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
+    .replace(/\b\d{1,4}[./-]\d{1,2}[./-]\d{1,4}\b/g, ' ');
+}
+
+function tmValidCode(raw) {
+  const c = String(raw || '').replace(/[ -]/g, '');
+  if (!/^\d{4,8}$/.test(c)) return null;
+  if (/^0+$/.test(c)) return null;                // 000000 — kod emas
+  if (/^(?:19|20)\d\d$/.test(c)) return null;     // yil
+  return c;
+}
+
+function extractVerificationDetails(subject, body, html) {
+  // Faqat ko'rinadigan matndan qidiramiz: HTML/CSS ichidagi rang kodlari va havolalar hisobga olinmaydi
+  const bodyText = /<[a-z!][\s\S]*>/i.test(body || '') ? tmHtmlToText(body) : (body || '');
+  const content = tmCleanForCode(`${subject || ''}\n${bodyText}\n${tmHtmlToText(html)}`);
+
+  const KW = '(?:verification|verify|confirmation|confirm|login|log[- ]in|security|sign[- ]in|passcode|one-time|otp|code|kod|kodi|tasdiqlash|tasdiqlovchi)';
+  const NUM = '(\\d{3}[ -]\\d{3}|\\d{4,8})';
   const codePatterns = [
-    /(?:verification|confirmation|login|security|sign[- ]in|passcode|one-time|otp|kod)[\s\w:]*?(\b\d{6}\b)/i,
-    /\b(\d{6})\b[\s\w]*?(?:is your|kod|code|tasdiqlash)/i,
-    /(?:code|kod):\s*(\b\d{6}\b)/i,
-    /\b(\d{6})\b/
+    new RegExp(KW + '[^\\d\\n]{0,40}?(?:^|[^#\\w.$,])' + NUM + '(?![\\w%]|[.,]\\d)', 'gi'),
+    new RegExp('(?:^|[^#\\w.$,])' + NUM + '(?![\\w%]|[.,]\\d)[^\\d\\n]{0,30}?(?:is your|is the|kod|code|tasdiqlash)', 'gi')
   ];
+  let code = null;
   for (const re of codePatterns) {
-    const m = content.match(re);
-    if (m && m[1]) {
-      code = m[1];
-      break;
+    for (const m of content.matchAll(re)) {
+      const v = tmValidCode(m[1]);
+      if (v) { code = v; break; }
+    }
+    if (code) break;
+  }
+  // Alohida qatordagi yolg'iz raqam — faqat matnda kod haqida so'z bo'lsa
+  if (!code && new RegExp(KW, 'i').test(content)) {
+    for (const line of content.split('\n')) {
+      const m = line.trim().match(/^(\d{3}[ -]\d{3}|\d{4,8})$/);
+      const v = m && tmValidCode(m[1]);
+      if (v) { code = v; break; }
     }
   }
 
   let link = null;
   const linkMatches = (html || body || '').match(/https?:\/\/[^\s"'<>]+(?:verify|confirm|magic-link|token|activate|login)[^\s"'<>]+/gi);
   if (linkMatches && linkMatches.length > 0) {
-    link = linkMatches[0].replace(/&amp;/g, '&');
+    const good = linkMatches.find((l) => !/unsubscribe|preferences|optout|opt-out/i.test(l)) || null;
+    if (good) link = good.replace(/&amp;/g, '&');
   }
 
   return { code, link };
+}
+
+async function tmCopyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (_) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch (__) {
+      return false;
+    }
+  }
+}
+
+// ---- Xat HTML xavfsizligi: skriptlar, tashqi rasmlar va tracking piksellar ----
+// Faqat haqiqiy kuzatuv belgilari (oddiy "pixel" yoki xost nomi bo'yicha emas): aks holda oddiy rasmlar ham yo'qolib qoladi
+const TM_TRACK_RE = /(?:\/wf\/open|\/e\/o\/|\/I0\/|\/open(?:\.php|\.gif|\.png|\/|\?)|\/track\/open|\/trk\/open|open\.(?:gif|png)|[?&](?:open|track|trk)=|\/pixel(?:\.gif|\.png|\/|\?)|pixel\.(?:gif|png)|beacon|telemetry|list-manage\.com\/track|\/o\/[a-z0-9_-]{20,}(?:\.gif)?(?:$|[?#]))/i;
+const TM_TRACK_HOST_RE = /(?:mail\.anthropic\.com|sendgrid\.net|awstrack\.me|mandrillapp\.com)/i;
+const TM_REAL_IMG_RE = /\.(?:png|jpe?g|svg|webp)(?:$|[?#])/i;
+const TM_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function tmHasRemoteImages(html) {
+  return /<img\b[^>]*\ssrc\s*=\s*["']?\s*(?:https?:)?\/\//i.test(html)
+    || /url\(\s*["']?\s*(?:https?:)?\/\//i.test(html)
+    || /\sbackground\s*=\s*["']?\s*(?:https?:)?\/\//i.test(html);
+}
+
+function tmBuildEmailDoc(rawHtml, allowImages) {
+  let h = String(rawHtml || '');
+
+  // Faol kontentni olib tashlaymiz (CSP va sandbox bilan birga ikki qatlamli himoya)
+  h = h.replace(/<(script|iframe|object|embed|applet|form)\b[\s\S]*?<\/\1\s*>/gi, '');
+  h = h.replace(/<(script|iframe|object|embed|applet|link|base)\b[^>]*>/gi, '');
+  h = h.replace(/<meta\b[^>]*http-equiv\s*=\s*["']?(?:refresh|content-security-policy)[^>]*>/gi, '');
+  h = h.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  h = h.replace(/(href\s*=\s*["']?)\s*javascript:/gi, '$1#blocked:');
+
+  // <img>: kuzatuvchi piksellar har doim zararsizlantiriladi, qolgan tashqi rasmlar faqat ruxsat bilan
+  h = h.replace(/<img\b[^>]*>/gi, (rawTag) => {
+    let tag = rawTag.replace(/\ssrcset\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    const m = tag.match(/\ssrc\s*=\s*(["']?)([^"'\s>]+)\1/i);
+    const noRef = /referrerpolicy=/i.test(tag) ? tag : tag.replace(/<img\b/i, '<img referrerpolicy="no-referrer"');
+    if (!m) return noRef;
+    let src = m[2].replace(/&amp;/gi, '&');
+    if (!/^(?:https?:)?\/\//i.test(src)) return noRef;   // data:, cid: va h.k. tegilmaydi
+    // http:// va //host rasmlarni https ga o'tkazamiz (CSP faqat https ga ruxsat beradi)
+    src = src.replace(/^\/\//, 'https://').replace(/^http:\/\//i, 'https://');
+
+    const lower = tag.toLowerCase();
+    const dim = (name) => {
+      const a = lower.match(new RegExp('(?:\\s|["\';])' + name + '\\s*[=:]\\s*["\']?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:px)?', 'i'));
+      return a ? Number(a[1]) : null;
+    };
+    const w = dim('width');
+    const hh = dim('height');
+    const tiny = w !== null && hh !== null && w <= 1 && hh <= 1;
+    const hidden = /display\s*:\s*none/.test(lower);
+    const hostTrack = TM_TRACK_HOST_RE.test(src) && !TM_REAL_IMG_RE.test(src);
+    if (TM_TRACK_RE.test(src) || hostTrack || tiny || hidden) {
+      return '<img src="' + TM_PIXEL + '" width="1" height="1" style="display:none!important" alt="">';
+    }
+    if (!allowImages) {
+      return noRef.replace(m[0], () => ' src="' + TM_PIXEL + '" data-blocked="1"');
+    }
+    return noRef.replace(m[0], () => ' src="' + src.replace(/"/g, '&quot;') + '"');
+  });
+
+  const csp = "default-src 'none'; img-src data:" + (allowImages ? ' https:' : '') + "; style-src 'unsafe-inline'; font-src data:";
+  const headMeta = `
+      <meta http-equiv="Content-Security-Policy" content="${csp}">
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="referrer" content="no-referrer">
+      <base target="_blank">
+      <style>
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; overflow-y: auto !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        img { max-width: 100%; }
+        table { max-width: 100%; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); }
+      </style>
+    `;
+
+  if (/<head[\s>]/i.test(h)) {
+    h = h.replace(/<head[^>]*>/i, `$&${headMeta}`);
+  } else if (/<html[\s>]/i.test(h)) {
+    h = h.replace(/<html[^>]*>/i, `$&<head>${headMeta}</head>`);
+  } else {
+    h = `<!DOCTYPE html><html><head>${headMeta}</head><body>${h}</body></html>`;
+  }
+  return h;
 }
 
 // MESSAGE MODAL VIEW (1:1 RICH EMAIL WITH BEAUTIFUL HTML PREVIEW)
@@ -1147,11 +1300,9 @@ window.openMessageModal = function(msgIdOrObj) {
           <div class="smart-card">
             <div class="smart-info">
               <span class="smart-badge">KOD</span>
-              <span class="smart-value-code">${code}</span>
+              <span class="smart-value-code">${escapeHtml(code)}</span>
             </div>
-            <button class="smart-btn" onclick="navigator.clipboard.writeText('${code}').then(() => { this.textContent = 'Nusxalandi! ✓'; setTimeout(() => this.textContent = 'Kodni nusxalash', 2000); })">
-              Kodni nusxalash
-            </button>
+            <button class="smart-btn" type="button" data-copy="${escapeHtml(code)}" data-label="Copy Code">Copy Code</button>
           </div>
         `;
       }
@@ -1163,13 +1314,18 @@ window.openMessageModal = function(msgIdOrObj) {
               <span class="smart-badge">HAVOLA</span>
               <span class="smart-desc">Tasdiqlash havolasini nusxalab, Claude ochilgan Rail profilingizga paste qiling</span>
             </div>
-            <button class="smart-btn smart-btn-accent" onclick="navigator.clipboard.writeText('${safeLink}').then(() => { this.textContent = 'Nusxalandi! ✓'; setTimeout(() => this.textContent = 'Havolani nusxalash', 2000); })">
-              Havolani nusxalash
-            </button>
+            <button class="smart-btn smart-btn-accent" type="button" data-copy="${escapeHtml(safeLink)}" data-label="Havolani nusxalash">Havolani nusxalash</button>
           </div>
         `;
       }
       smartActions.innerHTML = cardsHtml;
+      smartActions.querySelectorAll('[data-copy]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const ok = await tmCopyText(btn.dataset.copy);
+          btn.textContent = ok ? 'Nusxalandi' : 'Nusxalab bo\u2018lmadi';
+          setTimeout(() => { btn.textContent = btn.dataset.label; }, 1800);
+        });
+      });
       smartActions.classList.remove('hidden');
     } else {
       smartActions.innerHTML = '';
@@ -1185,93 +1341,43 @@ window.openMessageModal = function(msgIdOrObj) {
   }
 
   if (rawHtml) {
-    let decodedHtml = decodeQuotedPrintableClient(rawHtml);
+    const srcHtml = decodeQuotedPrintableClient(rawHtml);
+    const hasRemote = tmHasRemoteImages(srcHtml);
 
-    // Rasmlarni to'siqsiz yuklash uchun no-referrer va barcha linklar yangi oynada ochilishi uchun base target
-    const headMeta = `
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="referrer" content="no-referrer">
-      <base target="_blank">
-      <style>
-        html, body {
-          margin: 0;
-          padding: 0;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          box-sizing: border-box;
-          overflow-y: auto !important;
-          overflow-x: auto !important;
-          -webkit-overflow-scrolling: touch;
-        }
-        img {
-          max-width: 100%;
-        }
-        table {
-          max-width: 100%;
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.25);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 0, 0, 0.4);
-        }
-      </style>
-    `;
+    const renderEmail = (allowImages) => {
+      msgDetailBody.innerHTML = '';
 
-    if (/<head[\s>]/i.test(decodedHtml)) {
-      decodedHtml = decodedHtml.replace(/<head[^>]*>/i, `$&${headMeta}`);
-    } else if (/<html[\s>]/i.test(decodedHtml)) {
-      decodedHtml = decodedHtml.replace(/<html[^>]*>/i, `$&<head>${headMeta}</head>`);
-    } else {
-      decodedHtml = `<!DOCTYPE html><html><head>${headMeta}</head><body>${decodedHtml}</body></html>`;
-    }
-
-    // TRACKING PIXEL HIMOYASI:
-    // 1x1 o'lchamdagi yoki kuzatuvchi CDN domenlaridagi yashirin piksellarni zararsizlantiramiz
-    const trackingPattern = /(?:\/open\/|\/wf\/open|pixel|beacon|telemetry|mail\.anthropic\.com|sendgrid\.net|awstrack\.me|mandrillapp\.com)/i;
-    const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
-    const imgRe = /<img\b([^>]*?)src=(['"]?)(https?:\/\/[^\s'">]+)\2([^>]*?)>/gi;
-    decodedHtml = decodedHtml.replace(imgRe, (match, before, quote, src, after) => {
-      const allAttrs = (before + ' ' + after).toLowerCase();
-      const isTiny = (allAttrs.includes('width="1"') || allAttrs.includes("width='1'")) &&
-                    (allAttrs.includes('height="1"') || allAttrs.includes("height='1'"));
-      const isTrack = trackingPattern.test(src) || isTiny || allAttrs.includes('width:1px') || allAttrs.includes('height:1px');
-
-      if (isTrack) {
-        return `<img ${before} src="${TRANSPARENT_PIXEL}" width="1" height="1" style="display:none!important;" alt="" ${after}>`;
+      if (hasRemote) {
+        const bar = document.createElement('div');
+        bar.className = 'msg-img-bar';
+        const label = document.createElement('span');
+        label.textContent = allowImages
+          ? "Tashqi rasmlar ko\u2018rsatilmoqda (kuzatuvchi piksellar baribir bloklangan)"
+          : 'Tashqi rasmlar va kuzatuvchi piksellar xavfsizlik uchun bloklandi';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'smart-btn';
+        btn.textContent = allowImages ? 'Rasmlarni yashirish' : "Rasmlarni ko\u2018rsatish";
+        btn.addEventListener('click', () => renderEmail(!allowImages));
+        bar.append(label, btn);
+        msgDetailBody.appendChild(bar);
       }
 
-      // Oddiy haqiqiy rasmlar (logolar, bannerlar) foydalanuvchining o'z brauzeri orqali no-referrer bilan ochiladi
-      return `<img ${before} src="${src}" referrerpolicy="no-referrer" loading="lazy" ${after}>`;
-    });
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-iframe-wrap';
 
-    // Har qanday boshqa img teglariga ham no-referrer qo'shamiz
-    decodedHtml = decodedHtml.replace(/<img\b([^>]*?)>/gi, (match, attrs) => {
-      if (/referrerpolicy=/i.test(attrs)) {
-        return `<img ${attrs.replace(/referrerpolicy=["'][^"']*["']/gi, 'referrerpolicy="no-referrer"')}>`;
-      }
-      return `<img referrerpolicy="no-referrer" ${attrs}>`;
-    });
+      const iframe = document.createElement('iframe');
+      iframe.className = 'msg-email-frame';
+      iframe.setAttribute('referrerpolicy', 'no-referrer');
+      // Skriptlar va parent sahifaga kirish yo'q; faqat havolalarni yangi oynada ochishga ruxsat
+      iframe.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
+      iframe.srcdoc = tmBuildEmailDoc(srcHtml, allowImages);
 
-    const wrap = document.createElement('div');
-    wrap.className = 'msg-iframe-wrap';
+      wrap.appendChild(iframe);
+      msgDetailBody.appendChild(wrap);
+    };
 
-    const iframe = document.createElement('iframe');
-    iframe.className = 'msg-email-frame';
-    iframe.setAttribute('referrerpolicy', 'no-referrer');
-    iframe.srcdoc = decodedHtml;
-
-    wrap.appendChild(iframe);
-    msgDetailBody.appendChild(wrap);
+    renderEmail(false);
   } else {
     const card = document.createElement('div');
     card.className = 'msg-plain-card';

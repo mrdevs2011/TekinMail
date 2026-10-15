@@ -3567,3 +3567,18 @@ html {
   color: var(--text-dim);
   font-size: 13.5px;
 }
+
+/* TASHQI RASMLAR BLOKLANGANI HAQIDA PANEL */
+.msg-img-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  background: #0d131f;
+  border: 1px solid #1f2b44;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #94a3b8;
+}
