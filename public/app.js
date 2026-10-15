@@ -1008,11 +1008,13 @@ window.openMessageModal = function(msgIdOrObj) {
   if (!msg) return;
 
   const senderInfo = formatSenderInfo(msg.from_name, msg.from_address);
+  const cleanSender = senderInfo.displayName || senderInfo.email || 'Xabarchi';
 
   msgDetailSubject.textContent = cleanSubject(msg.subject);
-  msgDetailFrom.textContent = senderInfo.email
-    ? `Kimdan: ${senderInfo.displayName} <${senderInfo.email}>`
-    : `Kimdan: ${senderInfo.displayName}`;
+  msgDetailFrom.textContent = `Kimdan: ${cleanSender}`;
+  if (senderInfo.email) {
+    msgDetailFrom.title = senderInfo.email;
+  }
   msgDetailTo.textContent = `Kimga: ${msg.email_address}`;
   msgDetailDate.textContent = `Sana: ${formatDateFull(msg.created_at)}`;
 
