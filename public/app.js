@@ -1127,10 +1127,8 @@ window.openMessageModal = function(msgIdOrObj) {
       <style>
         html, body {
           margin: 0;
-          padding: 16px;
+          padding: 0;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          color: #111827;
-          background: #ffffff;
           box-sizing: border-box;
           overflow-y: auto !important;
           overflow-x: auto !important;
