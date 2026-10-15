@@ -711,9 +711,10 @@ function renderEmails() {
 
   emailsListContainer.innerHTML = filtered.map(item => {
     const isSelected = activeFilter === item.address;
+    const itemInitial = (item.address || '').charAt(0).toUpperCase() || 'M';
     return `
       <div class="email-card ${isSelected ? 'selected' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')">
-        <div class="email-avatar">${initial}</div>
+        <div class="email-avatar">${itemInitial}</div>
         <div class="email-info">
           <div class="email-address-text" title="${escapeHtml(item.address)}">${escapeHtml(item.address)}</div>
           <div class="email-owner-text">${escapeHtml(ownerName)}</div>
