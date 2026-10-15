@@ -17,6 +17,34 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // 0. Cron cleanup (eski xabarlar)
+  if (req.query?.action === 'cleanup' || req.query?.cleanup === '1') {
+    const cronSecret = (process.env.CRON_SECRET || '').trim();
+    const authHeader = (req.headers?.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const querySecret = (req.query?.secret || '').trim();
+    const provided = authHeader || querySecret;
+    if (cronSecret && provided !== cronSecret) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    if (!cronSecret && process.env.VERCEL_ENV === 'production') {
+      return res.status(500).json({ success: false, error: 'CRON_SECRET sozlanmagan' });
+    }
+    try {
+      const { getSupabase } = await import('./_supabase.js');
+      const days = Math.max(1, parseInt(process.env.MESSAGE_TTL_DAYS || '30', 10) || 30);
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const supabase = getSupabase();
+      const { data, error } = await supabase.from('messages').delete({ count: 'exact' }).lt('created_at', cutoff).select('id');
+      if (error) return res.status(500).json({ success: false, error: error.message });
+      const deleted = Array.isArray(data) ? data.length : 0;
+      const loginCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from('login_attempts').delete().lt('created_at', loginCutoff);
+      return res.status(200).json({ success: true, deleted, cutoff, ttlDays: days });
+    } catch (err) {
+      return res.status(500).json({ success: false, error: err.message || 'cleanup failed' });
+    }
+  }
+
   // 1. Agar rasm proxy so'rovi bo'lsa (/api/config?url=... yoki /api/config?img=...)
   const rawUrl = req.query?.url || req.query?.img;
   if (rawUrl && typeof rawUrl === 'string') {

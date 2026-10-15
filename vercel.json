@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/cleanup-old-messages",
+      "destination": "/api/config?action=cleanup"
+    },
+    {
       "source": "/api/proxy-image",
       "destination": "/api/config"
     },
