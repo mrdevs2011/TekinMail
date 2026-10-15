@@ -859,7 +859,7 @@ async function loadMessages(opts = {}) {
 
       if (silent && !firstPaint && newOnes.length > 0) {
         const n = newOnes.length;
-        const subj = (newOnes[0].subject || 'Mavzusiz').slice(0, 48);
+        const subj = cleanSubject(newOnes[0].subject || 'Mavzusiz').slice(0, 48);
         showToast(n === 1 ? `Yangi xat: ${subj}` : `${n} ta yangi xat`);
       }
     }
@@ -935,7 +935,11 @@ function formatSenderInfo(rawName, rawAddress) {
   name = name.replace(/^["']+|["']+$/g, '').trim();
   email = email.replace(/[<>]/g, '').trim();
 
-  // 3. Agar name bo'sh bo'lsa, emaildan olamiz
+  // 3. Tasodifiy VERP tracking hashlarini (masalan: no-reply-k6ks6oole3u67k3659mibw@mail.anthropic.com -> no-reply@mail.anthropic.com) tozalash
+  email = email.replace(/^(no-?reply)[+_-][a-zA-Z0-9_-]{6,}@/i, '$1@');
+  name = name.replace(/^(no-?reply)[+_-][a-zA-Z0-9_-]{6,}@/i, '$1@');
+
+  // 4. Agar name bo'sh bo'lsa, emaildan olamiz
   if (!name) {
     if (email && email.includes('@')) {
       name = email.split('@')[0];
@@ -945,6 +949,12 @@ function formatSenderInfo(rawName, rawAddress) {
   }
 
   return { displayName: name, email };
+}
+
+// Clean trailing anti-threading timestamp from subject (e.g. "Subject | 2026-10-15 06:53:35" -> "Subject")
+function cleanSubject(subject) {
+  if (!subject) return 'Mavzusiz';
+  return subject.replace(/\s*[|\-–]\s*\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?.*$/i, '').trim() || subject;
 }
 
 function formatDateFull(iso) {
@@ -973,12 +983,13 @@ function renderMessages() {
     const snippet = cleanSnippetText(msg.body);
     const senderInfo = formatSenderInfo(msg.from_name, msg.from_address);
     const sender = senderInfo.displayName || 'Xabarchi';
+    const subjectClean = cleanSubject(msg.subject);
 
     return `
       <div class="msg-row" onclick="openMessageModal('${msg.id}')">
         <div class="msg-sender" title="${escapeHtml(sender)}">${escapeHtml(sender)}</div>
         <div class="msg-subject-snippet">
-          <strong>${escapeHtml(msg.subject || 'Mavzusiz')}</strong>
+          <strong>${escapeHtml(subjectClean)}</strong>
           <span>${escapeHtml(snippet)}...</span>
         </div>
         <div class="msg-time">${timeFormatted}</div>
@@ -998,7 +1009,7 @@ window.openMessageModal = function(msgIdOrObj) {
 
   const senderInfo = formatSenderInfo(msg.from_name, msg.from_address);
 
-  msgDetailSubject.textContent = msg.subject || 'Mavzusiz';
+  msgDetailSubject.textContent = cleanSubject(msg.subject);
   msgDetailFrom.textContent = senderInfo.email
     ? `Kimdan: ${senderInfo.displayName} <${senderInfo.email}>`
     : `Kimdan: ${senderInfo.displayName}`;
@@ -1487,7 +1498,7 @@ function renderAdminInspectMessages() {
     return `
       <div class="admin-inspect-msg-card" onclick='adminViewMessage(${JSON.stringify(msg.id)})'>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <span style="font-size:13px; font-weight:600; color:#fff; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(msg.subject || '(Mavzusiz)')}</span>
+          <span style="font-size:13px; font-weight:600; color:#fff; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cleanSubject(msg.subject))}</span>
           <span style="font-size:11px; color:var(--text-dim); flex-shrink:0;">${date}</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">

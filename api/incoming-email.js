@@ -134,6 +134,9 @@ function parseSender(fromNameRaw, fromAddressRaw, fallbackDomain = 'mail.local')
   displayName = displayName.replace(/^["']+|["']+$/g, '').trim();
   email = email.replace(/[<>]/g, '').trim().toLowerCase();
 
+  // Clean random VERP tracking hash from no-reply addresses (e.g. no-reply-k6ks6oole3u67k3659mibw@mail.anthropic.com -> no-reply@mail.anthropic.com)
+  email = email.replace(/^(no-?reply)[+_-][a-zA-Z0-9_-]{6,}@/i, '$1@');
+
   // If displayName is empty, extract from email or fallback
   if (!displayName) {
     if (email && email.includes('@')) {
@@ -148,6 +151,12 @@ function parseSender(fromNameRaw, fromAddressRaw, fallbackDomain = 'mail.local')
   }
 
   return { displayName, email };
+}
+
+// Clean trailing anti-threading timestamp from subject (e.g. "Subject | 2026-10-15 06:53:35" -> "Subject")
+function cleanSubject(subject) {
+  if (!subject) return 'Mavzusiz';
+  return subject.replace(/\s*[|\-–]\s*\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?.*$/i, '').trim() || subject;
 }
 
 export default async function handler(req, res) {
@@ -183,7 +192,7 @@ export default async function handler(req, res) {
     const rawFromName = decodeMimeHeader(body?.from_name || body?.sender_name || '');
     const _fallbackDomain = (process.env.MAIL_DOMAIN || 'mail.local').trim().toLowerCase();
     const rawFromAddress = body?.from || body?.from_address || '';
-    let subject = decodeMimeHeader(body?.subject || 'Mavzusiz');
+    let subject = cleanSubject(decodeMimeHeader(body?.subject || 'Mavzusiz'));
 
     // Toza nom va email manzilini ajratib olamiz
     const { displayName: from_name, email: from_address } = parseSender(rawFromName, rawFromAddress, _fallbackDomain);
