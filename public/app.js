@@ -1088,6 +1088,33 @@ function renderMessages() {
   }).join('');
 }
 
+function extractVerificationDetails(subject, body, html) {
+  const content = `${subject || ''}\n${body || ''}\n${html || ''}`;
+
+  let code = null;
+  const codePatterns = [
+    /(?:verification|confirmation|login|security|sign[- ]in|passcode|one-time|otp|kod)[\s\w:]*?(\b\d{6}\b)/i,
+    /\b(\d{6})\b[\s\w]*?(?:is your|kod|code|tasdiqlash)/i,
+    /(?:code|kod):\s*(\b\d{6}\b)/i,
+    /\b(\d{6})\b/
+  ];
+  for (const re of codePatterns) {
+    const m = content.match(re);
+    if (m && m[1]) {
+      code = m[1];
+      break;
+    }
+  }
+
+  let link = null;
+  const linkMatches = (html || body || '').match(/https?:\/\/[^\s"'<>]+(?:verify|confirm|magic-link|token|activate|login)[^\s"'<>]+/gi);
+  if (linkMatches && linkMatches.length > 0) {
+    link = linkMatches[0].replace(/&amp;/g, '&');
+  }
+
+  return { code, link };
+}
+
 // MESSAGE MODAL VIEW (1:1 RICH EMAIL WITH BEAUTIFUL HTML PREVIEW)
 window.openMessageModal = function(msgIdOrObj) {
   const msg = (msgIdOrObj && typeof msgIdOrObj === "object")
@@ -1107,6 +1134,47 @@ window.openMessageModal = function(msgIdOrObj) {
   }
   msgDetailTo.textContent = `Kimga: ${msg.email_address}`;
   msgDetailDate.textContent = `Sana: ${formatDateFull(msg.created_at)}`;
+
+  // SMART ACTIONS (OTP / VERIFICATION LINK QUICK COPY)
+  const smartActions = document.getElementById('msgSmartActions');
+  if (smartActions) {
+    const { code, link } = extractVerificationDetails(msg.subject, msg.body, msg.html);
+    if (code || link) {
+      let cardsHtml = '';
+      if (code) {
+        cardsHtml += `
+          <div class="smart-card">
+            <div class="smart-info">
+              <span class="smart-badge">KOD</span>
+              <span class="smart-value-code">${code}</span>
+            </div>
+            <button class="smart-btn" onclick="navigator.clipboard.writeText('${code}').then(() => { this.textContent = 'Nusxalandi! ✓'; setTimeout(() => this.textContent = 'Kodni nusxalash', 2000); })">
+              Kodni nusxalash
+            </button>
+          </div>
+        `;
+      }
+      if (link) {
+        const safeLink = encodeURI(link);
+        cardsHtml += `
+          <div class="smart-card">
+            <div class="smart-info">
+              <span class="smart-badge">HAVOLA</span>
+              <span class="smart-desc">Tasdiqlash havolasini nusxalab, Claude ochilgan Rail profilingizga paste qiling</span>
+            </div>
+            <button class="smart-btn smart-btn-accent" onclick="navigator.clipboard.writeText('${safeLink}').then(() => { this.textContent = 'Nusxalandi! ✓'; setTimeout(() => this.textContent = 'Havolani nusxalash', 2000); })">
+              Havolani nusxalash
+            </button>
+          </div>
+        `;
+      }
+      smartActions.innerHTML = cardsHtml;
+      smartActions.classList.remove('hidden');
+    } else {
+      smartActions.innerHTML = '';
+      smartActions.classList.add('hidden');
+    }
+  }
 
   msgDetailBody.innerHTML = '';
 
@@ -1165,12 +1233,24 @@ window.openMessageModal = function(msgIdOrObj) {
       decodedHtml = `<!DOCTYPE html><html><head>${headMeta}</head><body>${decodedHtml}</body></html>`;
     }
 
-    // Barcha tashqi rasmlarni /api/proxy-image orqali xavfsiz va to'siqsiz yuklaymiz.
-    // Bu Contentful, Anthropic, Sendgrid kabi barcha CDN'larning hotlink / CORS / CORP to'siqlarini chetlab o'tib, rasmlarni 100% ochilishini ta'minlaydi!
+    // TRACKING PIXEL HIMOYASI:
+    // 1x1 o'lchamdagi yoki kuzatuvchi CDN domenlaridagi yashirin piksellarni zararsizlantiramiz
+    const trackingPattern = /(?:\/open\/|\/wf\/open|pixel|beacon|telemetry|mail\.anthropic\.com|sendgrid\.net|awstrack\.me|mandrillapp\.com)/i;
+    const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
     const imgRe = /<img\b([^>]*?)src=(['"]?)(https?:\/\/[^\s'">]+)\2([^>]*?)>/gi;
     decodedHtml = decodedHtml.replace(imgRe, (match, before, quote, src, after) => {
-      const proxied = `/api/proxy-image?url=${encodeURIComponent(src)}`;
-      return `<img ${before} src="${proxied}" referrerpolicy="no-referrer" data-orig-src="${src}" onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src=this.dataset.origSrc;}" ${after}>`;
+      const allAttrs = (before + ' ' + after).toLowerCase();
+      const isTiny = (allAttrs.includes('width="1"') || allAttrs.includes("width='1'")) &&
+                    (allAttrs.includes('height="1"') || allAttrs.includes("height='1'"));
+      const isTrack = trackingPattern.test(src) || isTiny || allAttrs.includes('width:1px') || allAttrs.includes('height:1px');
+
+      if (isTrack) {
+        return `<img ${before} src="${TRANSPARENT_PIXEL}" width="1" height="1" style="display:none!important;" alt="" ${after}>`;
+      }
+
+      // Oddiy haqiqiy rasmlar (logolar, bannerlar) foydalanuvchining o'z brauzeri orqali no-referrer bilan ochiladi
+      return `<img ${before} src="${src}" referrerpolicy="no-referrer" loading="lazy" ${after}>`;
     });
 
     // Har qanday boshqa img teglariga ham no-referrer qo'shamiz
@@ -1186,7 +1266,6 @@ window.openMessageModal = function(msgIdOrObj) {
 
     const iframe = document.createElement('iframe');
     iframe.className = 'msg-email-frame';
-    // Sandbox olib tashlandi: rasmlar, CDN va shriftlar erkin va xatosiz yuklanadi
     iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.srcdoc = decodedHtml;
 

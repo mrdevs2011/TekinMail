@@ -25,6 +25,24 @@ export default async function handler(req, res) {
       return res.status(400).send('Invalid url protocol: only http and https allowed');
     }
 
+    // TRACKING PIXEL HIMOYASI:
+    // Anthropic, SendGrid va boshqa provayderlarning kuzatuvchi 1x1 piksellari Vercel server IP-sini
+    // fosh qilmasligi uchun ularga umuman so'rov jo'natmaymiz, to'g'ridan-to'g'ri bo'sh 1x1 GIF qaytaramiz!
+    const lower = targetUrl.toLowerCase();
+    const isTracking = lower.includes('/open/') || lower.includes('/wf/open') ||
+                       lower.includes('pixel') || lower.includes('beacon') ||
+                       lower.includes('track') || lower.includes('telemetry') ||
+                       lower.includes('mail.anthropic.com') || lower.includes('sendgrid.net') ||
+                       lower.includes('awstrack.me') || lower.includes('mandrillapp.com');
+
+    if (isTracking) {
+      const TRANSPARENT_GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      res.setHeader('Content-Type', 'image/gif');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(200).send(TRANSPARENT_GIF);
+    }
+
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 9000);

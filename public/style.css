@@ -2151,6 +2151,85 @@ body {
   color: #ffffff;
 }
 
+/* SMART ACTIONS (OTP / VERIFICATION LINK) */
+.msg-smart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 18px;
+  background: #080c14;
+  border-bottom: 1px solid #1a2234;
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+}
+.msg-smart-actions.hidden {
+  display: none !important;
+}
+.smart-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #0d131f;
+  border: 1px solid #1f2b44;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.smart-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.smart-badge {
+  background: #0284c7;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.smart-value-code {
+  font-family: var(--font-mono, monospace);
+  font-size: 20px;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 3px;
+}
+.smart-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.smart-btn {
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.smart-btn:hover {
+  background: #334155;
+}
+.smart-btn-accent {
+  background: #0284c7;
+  border-color: #0284c7;
+}
+.smart-btn-accent:hover {
+  background: #0369a1;
+}
+
 .msg-detail-body {
   padding: 14px 0 0;
   flex: 1;
