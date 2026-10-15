@@ -119,6 +119,9 @@ let currentEmails = [];
 let currentMessages = [];
 let activeFilter = 'all'; // 'all' yoki email address
 let activeDomain = '';
+const INBOX_PAGE_SIZE = 15;
+let hasMoreMessages = true;
+let isLoadingMore = false;
 
 // Public config (MAIL_DOMAIN from server)
 async function loadPublicConfig() {
@@ -764,6 +767,8 @@ window.selectEmailTab = async function(address) {
 
   // 1. Darhol boshqa tab xatlarini yashirib, Skeleton yuklashni ko'rsatamiz
   currentMessages = [];
+  hasMoreMessages = true;
+  isLoadingMore = false;
   renderMessagesSkeleton();
 
   // 2. Request ketma-ketlik raqami (agar foydalanuvchi tez-tez boshqa tabga bossa, eski natija ochilmaydi)
@@ -773,7 +778,7 @@ window.selectEmailTab = async function(address) {
   try {
     // 3. Orqa fonda yuklash va 2 soniya davomida silliq skeleton saqlash
     const minDelayPromise = new Promise(resolve => setTimeout(resolve, 2000));
-    const url = `/api/get-messages?email=${encodeURIComponent(address)}`;
+    const url = `/api/get-messages?email=${encodeURIComponent(address)}&offset=0&limit=${INBOX_PAGE_SIZE}`;
     const fetchPromise = fetch(url, {
       headers: { 'Authorization': `Bearer ${currentUser.token}` }
     }).then(async r => {
@@ -793,16 +798,20 @@ window.selectEmailTab = async function(address) {
 
     if (data && data.success) {
       currentMessages = data.messages || [];
+      hasMoreMessages = Boolean(data.hasMore);
       messagesHydrated = true;
       renderMessages();
+      if (messagesListContainer) messagesListContainer.scrollTop = 0;
     } else {
       currentMessages = [];
+      hasMoreMessages = false;
       messagesHydrated = true;
       renderMessages();
     }
   } catch (err) {
     if (reqId === activeTabRequestId) {
       currentMessages = [];
+      hasMoreMessages = false;
       messagesHydrated = true;
       renderMessages();
     }
@@ -832,7 +841,7 @@ async function loadMessages(opts = {}) {
   }
 
   try {
-    const url = `/api/get-messages?email=${encodeURIComponent(activeFilter)}`;
+    const url = `/api/get-messages?email=${encodeURIComponent(activeFilter)}&offset=0&limit=${INBOX_PAGE_SIZE}`;
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${currentUser.token}` }
     });
@@ -844,23 +853,29 @@ async function loadMessages(opts = {}) {
       return;
     }
     if (data.success) {
-      const next = data.messages || [];
+      const incoming = data.messages || [];
       const prevIds = new Set((currentMessages || []).map(m => String(m.id)));
-      const prevSig = messagesSignature(currentMessages);
-      const nextSig = messagesSignature(next);
       const firstPaint = !messagesHydrated;
       messagesHydrated = true;
-      if (!force && !firstPaint && prevSig === nextSig) return;
 
-      // Yangi xatlar (oldinda bo'lmagan id)
-      const newOnes = next.filter(m => !prevIds.has(String(m.id)));
-      currentMessages = next;
-      renderMessages(); // skeleton emas — oddiy ro'yxat
-
-      if (silent && !firstPaint && newOnes.length > 0) {
-        const n = newOnes.length;
-        const subj = cleanSubject(newOnes[0].subject || 'Mavzusiz').slice(0, 48);
-        showToast(n === 1 ? `Yangi xat: ${subj}` : `${n} ta yangi xat`);
+      if (silent) {
+        // Polling paytida yangi xatlar kelsa, ro'yxat tepasiga qo'shamiz (scroll orqali yuklangan eski xatlar o'chib ketmaydi)
+        const newOnes = incoming.filter(m => !prevIds.has(String(m.id)));
+        if (newOnes.length > 0) {
+          currentMessages = newOnes.concat(currentMessages);
+          renderMessages();
+          const n = newOnes.length;
+          const subj = cleanSubject(newOnes[0].subject || 'Mavzusiz').slice(0, 48);
+          showToast(n === 1 ? `Yangi xat: ${subj}` : `${n} ta yangi xat`);
+        }
+      } else {
+        currentMessages = incoming;
+        hasMoreMessages = Boolean(data.hasMore);
+        isLoadingMore = false;
+        renderMessages();
+        if (force && messagesListContainer) {
+          messagesListContainer.scrollTop = 0;
+        }
       }
     }
   } catch (err) {
@@ -871,6 +886,81 @@ async function loadMessages(opts = {}) {
     }
   }
 }
+
+// SCROLL PAGINATION: 15 tadan keyingi xatlarni yuklash
+async function loadMoreMessages() {
+  if (isLoadingMore || !hasMoreMessages || !currentUser || isTabSwitching) return;
+  isLoadingMore = true;
+
+  // Pastda yuklanish indikatorini ko'rsatamiz
+  let loaderEl = document.getElementById('inboxLoadMoreIndicator');
+  if (!loaderEl && messagesListContainer) {
+    loaderEl = document.createElement('div');
+    loaderEl.id = 'inboxLoadMoreIndicator';
+    loaderEl.className = 'inbox-load-more';
+    loaderEl.innerHTML = `
+      <div class="inbox-load-more-spinner"></div>
+      <span>Yuklanmoqda...</span>
+    `;
+    messagesListContainer.appendChild(loaderEl);
+  }
+
+  try {
+    const nextOffset = currentMessages.length;
+    const url = `/api/get-messages?email=${encodeURIComponent(activeFilter)}&offset=${nextOffset}&limit=${INBOX_PAGE_SIZE}`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${currentUser.token}` }
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const more = data.messages || [];
+      if (more.length === 0) {
+        hasMoreMessages = false;
+      } else {
+        const existingIds = new Set(currentMessages.map(m => String(m.id)));
+        const uniqueMore = more.filter(m => !existingIds.has(String(m.id)));
+        currentMessages = currentMessages.concat(uniqueMore);
+        hasMoreMessages = Boolean(data.hasMore && more.length >= INBOX_PAGE_SIZE);
+
+        const prevScroll = messagesListContainer ? messagesListContainer.scrollTop : 0;
+        renderMessages();
+        if (messagesListContainer) {
+          messagesListContainer.scrollTop = prevScroll;
+        }
+      }
+    } else {
+      hasMoreMessages = false;
+    }
+  } catch (err) {
+    console.warn('Load more messages failed:', err);
+  } finally {
+    isLoadingMore = false;
+    const el = document.getElementById('inboxLoadMoreIndicator');
+    if (el) el.remove();
+  }
+}
+
+function handleInboxScroll() {
+  if (!hasMoreMessages || isLoadingMore || isTabSwitching || !currentUser) return;
+  if (!messagesListContainer) return;
+
+  const scrollBottom = messagesListContainer.scrollHeight - messagesListContainer.scrollTop - messagesListContainer.clientHeight;
+  if (scrollBottom <= 180) {
+    loadMoreMessages();
+  }
+}
+
+if (messagesListContainer) {
+  messagesListContainer.addEventListener('scroll', handleInboxScroll, { passive: true });
+}
+
+window.addEventListener('scroll', () => {
+  if (!hasMoreMessages || isLoadingMore || isTabSwitching || !currentUser) return;
+  if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 250)) {
+    loadMoreMessages();
+  }
+}, { passive: true });
 
 btnRefreshInbox.addEventListener('click', () => {
   loadMessages({ force: true });

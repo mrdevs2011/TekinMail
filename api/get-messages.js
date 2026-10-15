@@ -17,6 +17,8 @@ export default async function handler(req, res) {
     if (!session) return jsonError(res, 401, 'Avtorizatsiyadan o\u02bbtmagan');
 
     const emailFilter = (req.query?.email || '').trim().toLowerCase();
+    const limit = Math.min(Math.max(parseInt(req.query?.limit, 10) || 15, 1), 50);
+    const offset = Math.max(parseInt(req.query?.offset, 10) || 0, 0);
 
     let query = supabase
       .from('messages')
@@ -29,10 +31,18 @@ export default async function handler(req, res) {
       query = query.eq('email_address', emailFilter);
     }
 
-    const { data: messages, error } = await query.limit(100);
+    const { data: messages, error } = await query.range(offset, offset + limit - 1);
     if (error) return jsonError(res, 500, error.message);
 
-    return jsonOk(res, { messages: messages || [] });
+    const msgs = messages || [];
+    const hasMore = msgs.length === limit;
+
+    return jsonOk(res, {
+      messages: msgs,
+      hasMore,
+      limit,
+      offset
+    });
   } catch (err) {
     console.error('[get-messages]', err.message);
     return jsonError(res, 500, err.message || 'Server xatoligi');

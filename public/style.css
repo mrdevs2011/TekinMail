@@ -1912,6 +1912,27 @@ body {
   font-family: var(--font-mono);
 }
 
+.inbox-load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 10px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--panel-border-subtle);
+}
+
+.inbox-load-more-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--accent-sky);
+  border-radius: 50%;
+  animation: btnSpin 0.7s linear infinite;
+}
+
 /* EMPTY STATES */
 .empty-box {
   text-align: center;
