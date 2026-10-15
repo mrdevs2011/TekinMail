@@ -1235,12 +1235,32 @@ async function tmCopyText(text) {
   }
 }
 
-// ---- Xat HTML xavfsizligi: skriptlar, tashqi rasmlar va tracking piksellar ----
-// Faqat haqiqiy kuzatuv belgilari (oddiy "pixel" yoki xost nomi bo'yicha emas): aks holda oddiy rasmlar ham yo'qolib qoladi
+// ---- Xat HTML xavfsizligi: tracking blok + tashqi rasmlar auto proxy (tugma yoq) ----
 const TM_TRACK_RE = /(?:\/wf\/open|\/e\/o\/|\/I0\/|\/open(?:\.php|\.gif|\.png|\/|\?)|\/track\/open|\/trk\/open|open\.(?:gif|png)|[?&](?:open|track|trk)=|\/pixel(?:\.gif|\.png|\/|\?)|pixel\.(?:gif|png)|beacon|telemetry|list-manage\.com\/track|\/o\/[a-z0-9_-]{20,}(?:\.gif)?(?:$|[?#]))/i;
-const TM_TRACK_HOST_RE = /(?:mail\.anthropic\.com|sendgrid\.net|awstrack\.me|mandrillapp\.com)/i;
-const TM_REAL_IMG_RE = /\.(?:png|jpe?g|svg|webp)(?:$|[?#])/i;
+const TM_TRACK_HOST_RE = /(?:sendgrid\.net|awstrack\.me|mandrillapp\.com)/i;
+const TM_REAL_IMG_RE = /\.(?:png|jpe?g|svg|webp|gif)(?:$|[?#])/i;
 const TM_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+// Session kesh: bir xil URL bir marta proxy (sahifa refresh gacha)
+const tmImageProxyCache = new Map();
+
+function tmProxyImgUrl(src) {
+  if (tmImageProxyCache.has(src)) return tmImageProxyCache.get(src);
+  const proxied = '/api/config?url=' + encodeURIComponent(src);
+  tmImageProxyCache.set(src, proxied);
+  return proxied;
+}
+
+function tmIsTrackingPixel(src, tagLower, w, h) {
+  const tiny = w !== null && h !== null && w <= 2 && h <= 2;
+  const hidden = /display\s*:\s*none/.test(tagLower);
+  // Logo/cdn haqiqiy rasm — bloklama
+  if (TM_REAL_IMG_RE.test(src) && !tiny && !hidden) return false;
+  if (TM_TRACK_RE.test(src)) return true;
+  if (TM_TRACK_HOST_RE.test(src) && !TM_REAL_IMG_RE.test(src)) return true;
+  if (tiny || hidden) return true;
+  return false;
+}
 
 function tmHasRemoteImages(html) {
   return /<img\b[^>]*\ssrc\s*=\s*["']?\s*(?:https?:)?\/\//i.test(html)
@@ -1248,47 +1268,39 @@ function tmHasRemoteImages(html) {
     || /\sbackground\s*=\s*["']?\s*(?:https?:)?\/\//i.test(html);
 }
 
-function tmBuildEmailDoc(rawHtml, allowImages) {
+function tmBuildEmailDoc(rawHtml) {
   let h = String(rawHtml || '');
 
-  // Faol kontentni olib tashlaymiz (CSP va sandbox bilan birga ikki qatlamli himoya)
   h = h.replace(/<(script|iframe|object|embed|applet|form)\b[\s\S]*?<\/\1\s*>/gi, '');
   h = h.replace(/<(script|iframe|object|embed|applet|link|base)\b[^>]*>/gi, '');
   h = h.replace(/<meta\b[^>]*http-equiv\s*=\s*["']?(?:refresh|content-security-policy)[^>]*>/gi, '');
   h = h.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
   h = h.replace(/(href\s*=\s*["']?)\s*javascript:/gi, '$1#blocked:');
 
-  // <img>: kuzatuvchi piksellar har doim zararsizlantiriladi, qolgan tashqi rasmlar faqat ruxsat bilan
   h = h.replace(/<img\b[^>]*>/gi, (rawTag) => {
     let tag = rawTag.replace(/\ssrcset\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     const m = tag.match(/\ssrc\s*=\s*(["']?)([^"'\s>]+)\1/i);
     const noRef = /referrerpolicy=/i.test(tag) ? tag : tag.replace(/<img\b/i, '<img referrerpolicy="no-referrer"');
     if (!m) return noRef;
     let src = m[2].replace(/&amp;/gi, '&');
-    if (!/^(?:https?:)?\/\//i.test(src)) return noRef;   // data:, cid: va h.k. tegilmaydi
-    // http:// va //host rasmlarni https ga o'tkazamiz (CSP faqat https ga ruxsat beradi)
+    if (!/^(?:https?:)?\/\//i.test(src)) return noRef;
     src = src.replace(/^\/\//, 'https://').replace(/^http:\/\//i, 'https://');
 
     const lower = tag.toLowerCase();
     const dim = (name) => {
-      const a = lower.match(new RegExp('(?:\\s|["\';])' + name + '\\s*[=:]\\s*["\']?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:px)?', 'i'));
+      const a = lower.match(new RegExp('(?:\\s|["\\';])' + name + '\\s*[=:]\\s*["\\']?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:px)?', 'i'));
       return a ? Number(a[1]) : null;
     };
     const w = dim('width');
     const hh = dim('height');
-    const tiny = w !== null && hh !== null && w <= 1 && hh <= 1;
-    const hidden = /display\s*:\s*none/.test(lower);
-    const hostTrack = TM_TRACK_HOST_RE.test(src) && !TM_REAL_IMG_RE.test(src);
-    if (TM_TRACK_RE.test(src) || hostTrack || tiny || hidden) {
+    if (tmIsTrackingPixel(src, lower, w, hh)) {
       return '<img src="' + TM_PIXEL + '" width="1" height="1" style="display:none!important" alt="">';
     }
-    if (!allowImages) {
-      return noRef.replace(m[0], () => ' src="' + TM_PIXEL + '" data-blocked="1"');
-    }
-    return noRef.replace(m[0], () => ' src="' + src.replace(/"/g, '&quot;') + '"');
+    const proxied = tmProxyImgUrl(src);
+    return noRef.replace(m[0], () => ' src="' + proxied.replace(/"/g, '&quot;') + '"');
   });
 
-  const csp = "default-src 'none'; img-src data:" + (allowImages ? ' https:' : '') + "; style-src 'unsafe-inline'; font-src data:";
+  const csp = "default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; font-src data:;";
   const headMeta = `
       <meta http-equiv="Content-Security-Policy" content="${csp}">
       <meta charset="utf-8">
@@ -1297,7 +1309,7 @@ function tmBuildEmailDoc(rawHtml, allowImages) {
       <base target="_blank">
       <style>
         html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; overflow-y: auto !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-        img { max-width: 100%; }
+        img { max-width: 100%; height: auto; }
         table { max-width: 100%; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
@@ -1389,43 +1401,21 @@ window.openMessageModal = function(msgIdOrObj) {
 
   if (rawHtml) {
     const srcHtml = decodeQuotedPrintableClient(rawHtml);
-    const hasRemote = tmHasRemoteImages(srcHtml);
 
-    const renderEmail = (allowImages) => {
-      msgDetailBody.innerHTML = '';
+    // Ochilganda rasmlar auto yuklanadi (proxy + tracking blok); tugma yoq
+    msgDetailBody.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-iframe-wrap';
 
-      if (hasRemote) {
-        const bar = document.createElement('div');
-        bar.className = 'msg-img-bar';
-        const label = document.createElement('span');
-        label.textContent = allowImages
-          ? "Tashqi rasmlar ko\u2018rsatilmoqda (kuzatuvchi piksellar baribir bloklangan)"
-          : 'Tashqi rasmlar va kuzatuvchi piksellar xavfsizlik uchun bloklandi';
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'smart-btn';
-        btn.textContent = allowImages ? 'Rasmlarni yashirish' : "Rasmlarni ko\u2018rsatish";
-        btn.addEventListener('click', () => renderEmail(!allowImages));
-        bar.append(label, btn);
-        msgDetailBody.appendChild(bar);
-      }
+    const iframe = document.createElement('iframe');
+    iframe.className = 'msg-email-frame';
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
+    iframe.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
+    iframe.srcdoc = tmBuildEmailDoc(srcHtml);
 
-      const wrap = document.createElement('div');
-      wrap.className = 'msg-iframe-wrap';
-
-      const iframe = document.createElement('iframe');
-      iframe.className = 'msg-email-frame';
-      iframe.setAttribute('referrerpolicy', 'no-referrer');
-      // Skriptlar va parent sahifaga kirish yo'q; faqat havolalarni yangi oynada ochishga ruxsat
-      iframe.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
-      iframe.srcdoc = tmBuildEmailDoc(srcHtml, allowImages);
-
-      wrap.appendChild(iframe);
-      msgDetailBody.appendChild(wrap);
-    };
-
-    renderEmail(false);
-  } else {
+    wrap.appendChild(iframe);
+    msgDetailBody.appendChild(wrap);
+    } else {
     const card = document.createElement('div');
     card.className = 'msg-plain-card';
     card.innerHTML = `<pre style="white-space:pre-wrap; font-family:var(--font-sans); font-size:13.5px; line-height:1.6; color:#f4f4f6; margin:0;">${escapeHtml(msg.body || '')}</pre>`;
@@ -1435,8 +1425,13 @@ window.openMessageModal = function(msgIdOrObj) {
   msgDetailModal.classList.remove('hidden');
 };
 
-btnCloseMsgDetail.addEventListener('click', () => msgDetailModal.classList.add('hidden'));
-msgDetailBackdrop.addEventListener('click', () => msgDetailModal.classList.add('hidden'));
+function closeMsgDetailModal() {
+  msgDetailModal.classList.add('hidden');
+  // iframe ni olib tashlash — tashqi so'rovlar to'xtaydi
+  if (msgDetailBody) msgDetailBody.innerHTML = '';
+}
+btnCloseMsgDetail.addEventListener('click', closeMsgDetailModal);
+msgDetailBackdrop.addEventListener('click', closeMsgDetailModal);
 
 window.toggleStar = function(msgId, event) {
   event.stopPropagation();
