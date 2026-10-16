@@ -741,6 +741,38 @@ function hideEmail(address, event) {
 }
 
 // RENDER LEFT EMAILS LIST (ESKIZDAGIDEK)
+// ==========================================
+// BAN HOLATI (Anthropic banned, Instagram banned ...)
+// ==========================================
+function banBadgesHtml(item) {
+  const bans = (item && item.bans) || [];
+  if (!bans.length) return '';
+  const shown = bans.slice(0, 2).map(b => {
+    const tip = `${b.label || b.service} banned${b.subject ? ' — ' + b.subject : ''}`;
+    return `<span class="ban-badge" title="${escapeHtml(tip)}">${escapeHtml(b.label || b.service)} banned</span>`;
+  }).join('');
+  const extra = bans.length > 2 ? `<span class="ban-badge ban-badge-more" title="${escapeHtml(bans.slice(2).map(b => (b.label || b.service) + ' banned').join(', '))}">+${bans.length - 2}</span>` : '';
+  return `<div class="ban-badges">${shown}${extra}</div>`;
+}
+
+// Fon: faqat ban holati o'zgargan bo'lsa UI yangilanadi
+async function refreshBans() {
+  if (!currentUser || !emailsHydrated) return;
+  try {
+    const res = await fetch('/api/get-emails', { headers: { 'Authorization': `Bearer ${currentUser.token}` } });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.success) return;
+    const sig = (list) => JSON.stringify((list || []).map(e => [e.address, (e.bans || []).map(b => b.service).sort()]).sort());
+    if (sig(data.emails) === sig(currentEmails)) return;
+    const byAddr = {};
+    (data.emails || []).forEach(e => { byAddr[e.address] = e.bans || []; });
+    currentEmails.forEach(e => { e.bans = byAddr[e.address] || []; });
+    renderEmails();
+    renderInboxTabs();
+  } catch (e) { /* jim */ }
+}
+
 function renderEmails() {
   const query = (emailSearchInput.value || '').trim().toLowerCase();
   const hidden = getHiddenEmails();
@@ -767,11 +799,12 @@ function renderEmails() {
     const isSelected = activeFilter === item.address;
     const itemInitial = (item.address || '').charAt(0).toUpperCase() || 'M';
     return `
-      <div class="email-card ${isSelected ? 'selected' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')">
+      <div class="email-card ${isSelected ? 'selected' : ''} ${(item.bans && item.bans.length) ? 'is-banned' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')">
         <div class="email-avatar">${itemInitial}</div>
         <div class="email-info">
           <div class="email-address-text" title="${escapeHtml(item.address)}">${escapeHtml(item.address)}</div>
           <div class="email-owner-text">${escapeHtml(ownerName)}</div>
+          ${banBadgesHtml(item)}
         </div>
         <div class="email-card-actions">
           <button class="btn-card-copy" onclick="copyToClipboard('${escapeAttr(item.address)}', event)" title="Nusxalash">copy</button>
@@ -802,8 +835,8 @@ function renderInboxTabs() {
       : item.address;
 
     html += `
-      <button class="filter-tab ${isActive ? 'active' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')" title="${escapeHtml(item.address)}">
-        ${escapeHtml(shortLabel)}
+      <button class="filter-tab ${isActive ? 'active' : ''} ${(item.bans && item.bans.length) ? 'has-ban' : ''}" onclick="selectEmailTab('${escapeAttr(item.address)}')" title="${escapeHtml(item.address)}${(item.bans && item.bans.length) ? ' — ' + escapeHtml(item.bans.map(b => (b.label || b.service) + ' banned').join(', ')) : ''}">
+        ${escapeHtml(shortLabel)}${(item.bans && item.bans.length) ? '<span class="ban-dot"></span>' : ''}
       </button>
     `;
   });
@@ -1446,6 +1479,7 @@ function startSync() {
   syncInterval = setInterval(() => {
     if (currentUser && !isTabSwitching) {
       loadMessages({ silent: true });
+      refreshBans();
     }
   }, 15000);
 }

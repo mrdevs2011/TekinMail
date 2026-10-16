@@ -1,6 +1,7 @@
 import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
 import { setSecurityHeaders, parseBody } from './_utils.js';
+import { detectAccountStatus, applyDetection } from './_ban-detector.js';
 
 // Quoted-Printable (e.g. =3D -> =, =\n -> '') decoder
 function decodeQuotedPrintable(str) {
@@ -217,7 +218,7 @@ export default async function handler(req, res) {
     // Bu email egasini topamiz
     const { data: emailRecord } = await supabase
       .from('emails')
-      .select('user_id, address')
+      .select('id, user_id, address')
       .eq('address', to_email)
       .single();
 
@@ -244,7 +245,26 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: insErr.message });
     }
 
-    return res.status(200).json({ success: true, message: insertedMsg });
+    // Ban/suspend xabarini aniqlash (xato bo'lsa ham xat qabul qilish buzilmaydi)
+    let banInfo = null;
+    try {
+      const detection = detectAccountStatus({
+        from: rawFromAddress,
+        fromName: rawFromName,
+        fromAddress: from_address,
+        subject,
+        text: cleanText,
+        raw: body?.raw || ''
+      });
+      if (detection) {
+        const applied = await applyDetection(supabase, emailRecord, insertedMsg?.id, subject, detection);
+        if (applied.applied) banInfo = { service: detection.service, event: detection.event };
+      }
+    } catch (e) {
+      console.warn('[incoming-email] ban detect failed:', e && e.message);
+    }
+
+    return res.status(200).json({ success: true, message: insertedMsg, ban: banInfo });
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });

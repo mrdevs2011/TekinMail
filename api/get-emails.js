@@ -24,9 +24,29 @@ export default async function handler(req, res) {
 
     if (error) return jsonError(res, 500, error.message);
 
+    // Ban holatlari (jadval hali yaratilmagan bo'lsa ham emaillar ro'yxati ishlayveradi)
+    const bansByAddress = {};
+    try {
+      const { data: bans, error: banErr } = await supabase
+        .from('email_bans')
+        .select('address, service, service_label, subject, detected_at')
+        .eq('user_id', session.userId)
+        .eq('status', 'banned');
+      if (!banErr) {
+        for (const b of bans || []) {
+          (bansByAddress[b.address] = bansByAddress[b.address] || []).push({
+            service: b.service,
+            label: b.service_label,
+            subject: b.subject,
+            detected_at: b.detected_at
+          });
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     return jsonOk(res, {
       domain: (process.env.MAIL_DOMAIN || '').trim().toLowerCase(),
-      emails: emails || []
+      emails: (emails || []).map((e) => ({ ...e, bans: bansByAddress[e.address] || [] }))
     });
   } catch (err) {
     console.error('[get-emails]', err.message);

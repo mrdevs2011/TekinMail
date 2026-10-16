@@ -135,3 +135,27 @@ CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at
 -- Optional: store domain separately (address already contains it)
 -- MAIL_DOMAINS env: comma-separated list e.g. bombaclat.uz,other.uz
 -- MESSAGE_TTL_DAYS (default 30), CRON_SECRET for /api/cleanup-old-messages
+
+-- ========================================================
+-- EMAIL BAN HOLATLARI (Anthropic / Instagram ... ban-suspend aniqlash)
+-- Xat kelganda api/_ban-detector.js avtomatik yozadi.
+-- Supabase → SQL Editor da BIR MARTA ishga tushiring.
+-- ========================================================
+CREATE TABLE IF NOT EXISTS public.email_bans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email_id UUID REFERENCES public.emails(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+    address TEXT NOT NULL,
+    service TEXT NOT NULL,
+    service_label TEXT,
+    status TEXT NOT NULL DEFAULT 'banned' CHECK (status IN ('banned', 'lifted')),
+    subject TEXT,
+    evidence TEXT,
+    message_id UUID,
+    detected_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    lifted_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT email_bans_address_service_unique UNIQUE (address, service)
+);
+CREATE INDEX IF NOT EXISTS idx_email_bans_user ON public.email_bans(user_id, status);
+ALTER TABLE public.email_bans ENABLE ROW LEVEL SECURITY;
+-- Public policy yo'q. Faqat Service Role (backend) yozadi/o'qiydi.
