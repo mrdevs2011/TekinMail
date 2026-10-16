@@ -2,6 +2,7 @@ import { getSupabase } from './_supabase.js';
 import { setCors, handleOptions } from './_cors.js';
 import { verifySessionToken } from './_auth.js';
 import { getBearerToken, setSecurityHeaders, jsonError, jsonOk } from './_utils.js';
+import { detectAccountStatus } from './_ban-detector.js';
 
 export default async function handler(req, res) {
   setCors(req, res, 'GET, OPTIONS');
@@ -34,7 +35,17 @@ export default async function handler(req, res) {
     const { data: messages, error } = await query.range(offset, offset + limit - 1);
     if (error) return jsonError(res, 500, error.message);
 
-    const msgs = messages || [];
+    // Har bir xatga ban belgisi: aynan shu xat ban/suspend xabari bo'lsa (detektor, bazaga yozmaydi)
+    const msgs = (messages || []).map((m) => {
+      const det = detectAccountStatus({
+        from: m.from_address,
+        fromName: `${m.from_name || ''} <${m.from_address || ''}>`,
+        fromAddress: m.from_address,
+        subject: m.subject,
+        text: m.body
+      });
+      return { ...m, ban: det ? { service: det.service, label: det.label, event: det.event } : null };
+    });
     const hasMore = msgs.length === limit;
 
     return jsonOk(res, {

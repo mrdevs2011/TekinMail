@@ -1182,10 +1182,10 @@ function renderMessages() {
     const subjectClean = cleanSubject(msg.subject);
 
     return `
-      <div class="msg-row" onclick="openMessageModal('${msg.id}')">
+      <div class="msg-row ${(msg.ban && msg.ban.event === 'banned') ? 'ban-row' : ''}" onclick="openMessageModal('${msg.id}')">
         <div class="msg-sender" title="${escapeHtml(sender)}">${escapeHtml(sender)}</div>
         <div class="msg-subject-snippet">
-          <strong>${escapeHtml(subjectClean)}</strong>
+          ${(msg.ban && msg.ban.event === 'banned') ? `<span class="ban-badge ban-badge-inline">${escapeHtml(msg.ban.label || msg.ban.service)} banned</span> ` : ''}<strong>${escapeHtml(subjectClean)}</strong>
           <span>${escapeHtml(snippet)}...</span>
         </div>
         <div class="msg-time">${timeFormatted}</div>

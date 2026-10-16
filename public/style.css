@@ -3661,3 +3661,25 @@ html {
   background: #ef4444;
   vertical-align: middle;
 }
+
+/* Inbox: ban/suspend xabari qatori qizil */
+.msg-row.ban-row {
+  background: rgba(239, 68, 68, 0.08);
+  box-shadow: inset 3px 0 0 #ef4444;
+}
+
+.msg-row.ban-row:hover {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.msg-row.ban-row .msg-sender,
+.msg-row.ban-row .msg-subject-snippet strong {
+  color: #fca5a5;
+}
+
+.ban-badge-inline {
+  margin-right: 6px;
+  font-size: 10px;
+  padding: 0 6px;
+  vertical-align: middle;
+}
