@@ -45,6 +45,12 @@ export default async function handler(req, res) {
     }
   }
 
+  // 0b. Eski xatlarni skanerlab ban holatlarini tiklash (tizimga kirgan foydalanuvchi)
+  if (req.query?.action === 'rescan-bans') {
+    const { rescanBans } = await import('./_ban-rescan.js');
+    return rescanBans(req, res);
+  }
+
   // 1. Agar rasm proxy so'rovi bo'lsa (/api/config?url=... yoki /api/config?img=...)
   const rawUrl = req.query?.url || req.query?.img;
   if (rawUrl && typeof rawUrl === 'string') {

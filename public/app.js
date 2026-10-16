@@ -509,6 +509,7 @@ async function loadEmails(opts = {}) {
       applyDomainToWorkspace();
       renderEmails();
       renderInboxTabs();
+      autoScanBans();
       loadMessages({ silent });
     }
   } catch (err) {
@@ -753,6 +754,21 @@ function banBadgesHtml(item) {
   }).join('');
   const extra = bans.length > 2 ? `<span class="ban-badge ban-badge-more" title="${escapeHtml(bans.slice(2).map(b => (b.label || b.service) + ' banned').join(', '))}">+${bans.length - 2}</span>` : '';
   return `<div class="ban-badges">${shown}${extra}</div>`;
+}
+
+// Har bir foydalanuvchi uchun BIR MARTA: eski xatlarni barcha emaillar bo'yicha skanerlab ban holatini tiklaydi
+async function autoScanBans() {
+  if (!currentUser) return;
+  const key = 'tm_ban_scan_v1:' + (currentUser.username || currentUser.full_name || 'u');
+  try { if (localStorage.getItem(key)) return; } catch (e) { /* storage yo'q */ }
+  try {
+    const res = await fetch('/api/config?action=rescan-bans&apply=1', { headers: { 'Authorization': `Bearer ${currentUser.token}` } });
+    const data = await res.json();
+    if (data && data.success) {
+      try { localStorage.setItem(key, String(Date.now())); } catch (e) { /* ignore */ }
+      if (data.written > 0) refreshBans();
+    }
+  } catch (e) { /* keyingi kirishda qayta uriniladi */ }
 }
 
 // Fon: faqat ban holati o'zgargan bo'lsa UI yangilanadi
