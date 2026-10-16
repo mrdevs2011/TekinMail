@@ -159,3 +159,21 @@ CREATE TABLE IF NOT EXISTS public.email_bans (
 CREATE INDEX IF NOT EXISTS idx_email_bans_user ON public.email_bans(user_id, status);
 ALTER TABLE public.email_bans ENABLE ROW LEVEL SECURITY;
 -- Public policy yo'q. Faqat Service Role (backend) yozadi/o'qiydi.
+
+-- ========================================================
+-- EMAILS TABLARI (Barchasi / Banned emaillar) + OMMAVIY O'CHIRISH
+-- Supabase -> SQL Editor da BIR MARTA ishga tushiring (qayta ishga tushirsa ham xavfsiz).
+-- Ommaviy o'chirish tezroq ishlashi uchun indekslar.
+-- ========================================================
+-- email_bans jadvali yuqorida yaratilgan bo'lishi kerak (EMAIL BAN HOLATLARI bo'limi).
+CREATE INDEX IF NOT EXISTS idx_email_bans_address ON public.email_bans(address);
+CREATE INDEX IF NOT EXISTS idx_email_bans_email_id ON public.email_bans(email_id);
+CREATE INDEX IF NOT EXISTS idx_email_bans_user_address ON public.email_bans(user_id, address);
+CREATE INDEX IF NOT EXISTS idx_messages_user_email ON public.messages(user_id, email_address);
+
+-- Tekshirish: nechta email banned? (user_id ni o'zingiznikiga almashtiring)
+-- SELECT COUNT(DISTINCT address) FROM public.email_bans WHERE status = 'banned';
+
+-- Qo'lda tozalash (xohlasangiz): barcha banned emaillar va ularning xatlari
+-- DELETE FROM public.messages WHERE email_address IN (SELECT address FROM public.email_bans WHERE status = 'banned');
+-- DELETE FROM public.emails   WHERE address       IN (SELECT address FROM public.email_bans WHERE status = 'banned');

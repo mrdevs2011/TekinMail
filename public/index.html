@@ -607,6 +607,24 @@
           </button>
         </div>
 
+        <!-- Emails: Barchasi / Banned tablar -->
+        <div class="email-scope-tabs" id="emailScopeTabs">
+          <div class="scope-tab-wrap">
+            <button type="button" class="scope-tab active" data-scope="all">Barchasi <span class="scope-count" id="scopeCountAll">0</span></button>
+            <button type="button" class="scope-more" data-menu="scopeMenuAll" title="Amallar" aria-label="Barchasi amallari">&#8943;</button>
+            <div class="scope-menu hidden" id="scopeMenuAll">
+              <button type="button" class="scope-menu-item danger" data-purge="all">Barcha emaillarni oʻchirish</button>
+            </div>
+          </div>
+          <div class="scope-tab-wrap">
+            <button type="button" class="scope-tab" data-scope="banned">Banned emaillar <span class="scope-count scope-count-ban" id="scopeCountBanned">0</span></button>
+            <button type="button" class="scope-more" data-menu="scopeMenuBanned" title="Amallar" aria-label="Banned amallari">&#8943;</button>
+            <div class="scope-menu hidden" id="scopeMenuBanned">
+              <button type="button" class="scope-menu-item danger" data-purge="banned">Barcha banned akkauntlarni oʻchirish</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Search Bar -->
         <div class="search-wrap">
           <div class="search-input-box">
@@ -799,6 +817,36 @@
         <div class="modal-btns">
           <button type="button" id="btnCancelDelete" class="btn-modal-cancel">Bekor qilish</button>
           <button type="button" id="btnConfirmDelete" class="btn-modal-danger">Ha, butunlay oʻchirilsin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OMMAVIY O'CHIRISH TASDIQLASH OYNASI (banned / barchasi) -->
+    <div id="bulkDeleteModal" class="modal-layer hidden">
+      <div class="modal-backdrop-click" id="bulkDeleteBackdrop"></div>
+      <div class="modal-card">
+        <div class="modal-alert-header">
+          <div class="modal-alert-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="bulkDeleteTitle">Emaillarni oʻchirish</h3>
+            <p class="modal-sub" id="bulkDeleteSub"></p>
+          </div>
+        </div>
+        <div class="delete-target-preview bulk-preview" id="bulkDeleteList"></div>
+        <p class="delete-warning-text" id="bulkDeleteWarn">Bu emaillarga kelgan barcha xabarlar ham bazadan butunlay oʻchib ketadi. Buni qaytarib boʻlmaydi.</p>
+        <div id="bulkTypeWrap" class="bulk-type-wrap hidden">
+          <label class="admin-input-label" for="bulkTypeInput">Tasdiqlash uchun <strong>hammasi</strong> deb yozing:</label>
+          <input type="text" id="bulkTypeInput" class="admin-text-input" placeholder="hammasi" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="modal-btns">
+          <button type="button" id="btnBulkCancel" class="btn-modal-cancel">Bekor qilish</button>
+          <button type="button" id="btnBulkConfirm" class="btn-modal-danger">Ha, oʻchirilsin</button>
         </div>
       </div>
     </div>

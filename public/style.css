@@ -3683,3 +3683,123 @@ html {
   padding: 0 6px;
   vertical-align: middle;
 }
+
+/* ==========================================
+   EMAILS TABLARI (Barchasi / Banned) + 3 nuqta menyu
+   ========================================== */
+.email-scope-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+}
+
+.scope-tab-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.scope-tab-wrap:has(.scope-tab.active) {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.scope-tab {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  padding: 7px 10px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scope-tab.active { color: #ffffff; }
+
+.scope-count {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.scope-count-ban { color: #fca5a5; }
+
+.scope-more {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 8px;
+  margin-right: 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+/* Hover boʻlganda 3 nuqta chiqadi */
+.scope-tab-wrap:hover .scope-more,
+.scope-tab-wrap:focus-within .scope-more,
+.scope-more:focus-visible { opacity: 1; }
+
+.scope-more:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+
+@media (hover: none) {
+  .scope-more { opacity: 1; }
+}
+
+.scope-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 4px;
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.scope-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.scope-menu-item.danger { color: #fca5a5; }
+.scope-menu-item.danger:hover { background: rgba(239, 68, 68, 0.16); color: #fecaca; }
+
+.bulk-preview {
+  max-height: 160px;
+  overflow-y: auto;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.bulk-type-wrap { margin: 12px 0 4px; }
+.bulk-type-wrap .admin-input-label { display: block; margin-bottom: 6px; }
+
+.btn-modal-danger:disabled { opacity: 0.45; cursor: not-allowed; }

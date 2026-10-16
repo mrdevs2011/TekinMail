@@ -745,6 +745,138 @@ function hideEmail(address, event) {
 // ==========================================
 // BAN HOLATI (Anthropic banned, Instagram banned ...)
 // ==========================================
+// ==========================================
+// EMAILS TABLARI: Barchasi / Banned + ommaviy oʻchirish
+// ==========================================
+let emailScope = 'all'; // 'all' | 'banned'
+let bulkScope = null;   // 'all' | 'banned' (modal ochiq paytda)
+
+function isEmailBanned(e) { return Boolean(e && e.bans && e.bans.length); }
+
+function updateScopeCounts(visible) {
+  const a = document.getElementById('scopeCountAll');
+  const b = document.getElementById('scopeCountBanned');
+  if (a) a.textContent = visible.length;
+  if (b) b.textContent = visible.filter(isEmailBanned).length;
+}
+
+function closeScopeMenus() {
+  document.querySelectorAll('.scope-menu').forEach(m => m.classList.add('hidden'));
+}
+
+function setEmailScope(scope) {
+  emailScope = scope === 'banned' ? 'banned' : 'all';
+  document.querySelectorAll('#emailScopeTabs .scope-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scope === emailScope);
+  });
+  closeScopeMenus();
+  renderEmails();
+}
+
+function openBulkDelete(scope) {
+  const modal = document.getElementById('bulkDeleteModal');
+  if (!modal) return;
+  const targets = scope === 'banned' ? currentEmails.filter(isEmailBanned) : currentEmails.slice();
+  closeScopeMenus();
+  if (targets.length === 0) {
+    showToast(scope === 'banned' ? 'Banned emaillar yoʻq' : 'Oʻchiradigan email yoʻq');
+    return;
+  }
+  bulkScope = scope;
+  const list = document.getElementById('bulkDeleteList');
+  const shown = targets.slice(0, 8).map(e => escapeHtml(e.address)).join('<br>');
+  const more = targets.length > 8 ? `<br>…va yana ${targets.length - 8} ta` : '';
+  if (list) list.innerHTML = shown + more;
+  document.getElementById('bulkDeleteTitle').textContent =
+    scope === 'banned' ? 'Barcha banned akkauntlarni oʻchirish' : 'Barcha emaillarni oʻchirish';
+  document.getElementById('bulkDeleteSub').textContent =
+    scope === 'banned'
+      ? `${targets.length} ta banned email bazadan butunlay oʻchiriladi:`
+      : `Hammasi boʻlib ${targets.length} ta email bazadan butunlay oʻchiriladi:`;
+  const typeWrap = document.getElementById('bulkTypeWrap');
+  const typeInput = document.getElementById('bulkTypeInput');
+  const confirmBtn = document.getElementById('btnBulkConfirm');
+  // "Barchasi" juda xavfli: tasdiqlash uchun soʻz yozdiriladi
+  const needType = scope === 'all';
+  if (typeWrap) typeWrap.classList.toggle('hidden', !needType);
+  if (typeInput) typeInput.value = '';
+  if (confirmBtn) confirmBtn.disabled = needType;
+  modal.classList.remove('hidden');
+  if (needType && typeInput) setTimeout(() => typeInput.focus(), 50);
+}
+
+function closeBulkDelete() {
+  bulkScope = null;
+  const modal = document.getElementById('bulkDeleteModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function confirmBulkDelete() {
+  if (!bulkScope || !currentUser) return;
+  const scope = bulkScope;
+  const confirmBtn = document.getElementById('btnBulkConfirm');
+  setButtonLoading(confirmBtn, true, 'Oʻchirilmoqda...');
+  try {
+    const res = await fetch('/api/delete-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentUser.token}` },
+      body: JSON.stringify({ scope, confirm: true })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const gone = new Set(data.addresses || []);
+      currentEmails = currentEmails.filter(e => !gone.has(e.address));
+      if (gone.has(activeFilter)) activeFilter = 'all';
+      closeBulkDelete();
+      renderEmails();
+      renderInboxTabs();
+      loadMessages({ force: true });
+      showToast(`${data.deleted || 0} ta email oʻchirildi`);
+    } else {
+      showToast(data.error || 'Oʻchirishda xatolik');
+    }
+  } catch (err) {
+    showToast('Tarmoq xatosi');
+  } finally {
+    setButtonLoading(confirmBtn, false, 'Ha, oʻchirilsin');
+  }
+}
+
+(function initEmailScopeTabs() {
+  const tabs = document.getElementById('emailScopeTabs');
+  if (!tabs) return;
+  tabs.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('.scope-tab');
+    if (tab) { setEmailScope(tab.dataset.scope); return; }
+    const more = ev.target.closest('.scope-more');
+    if (more) {
+      ev.stopPropagation();
+      const menu = document.getElementById(more.dataset.menu);
+      const wasOpen = menu && !menu.classList.contains('hidden');
+      closeScopeMenus();
+      if (menu && !wasOpen) menu.classList.remove('hidden');
+      return;
+    }
+    const purge = ev.target.closest('[data-purge]');
+    if (purge) openBulkDelete(purge.dataset.purge);
+  });
+  document.addEventListener('click', (ev) => {
+    if (!ev.target.closest('.scope-tab-wrap')) closeScopeMenus();
+  });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { closeScopeMenus(); closeBulkDelete(); } });
+
+  const cancel = document.getElementById('btnBulkCancel');
+  const backdrop = document.getElementById('bulkDeleteBackdrop');
+  const confirmBtn = document.getElementById('btnBulkConfirm');
+  const typeInput = document.getElementById('bulkTypeInput');
+  if (cancel) cancel.addEventListener('click', closeBulkDelete);
+  if (backdrop) backdrop.addEventListener('click', closeBulkDelete);
+  if (confirmBtn) confirmBtn.addEventListener('click', confirmBulkDelete);
+  if (typeInput) typeInput.addEventListener('input', () => {
+    if (bulkScope === 'all' && confirmBtn) confirmBtn.disabled = typeInput.value.trim().toLowerCase() !== 'hammasi';
+  });
+})();
+
 function banBadgesHtml(item) {
   const bans = (item && item.bans) || [];
   if (!bans.length) return '';
@@ -793,14 +925,16 @@ function renderEmails() {
   const query = (emailSearchInput.value || '').trim().toLowerCase();
   const hidden = getHiddenEmails();
   const visible = currentEmails.filter(e => !hidden.includes(e.address));
-  const filtered = visible.filter(e => e.address.toLowerCase().includes(query));
+  updateScopeCounts(visible);
+  const scoped = emailScope === 'banned' ? visible.filter(isEmailBanned) : visible;
+  const filtered = scoped.filter(e => e.address.toLowerCase().includes(query));
 
   if (mobileEmailsCount) mobileEmailsCount.textContent = visible.length;
 
   if (filtered.length === 0) {
     emailsListContainer.innerHTML = `
       <div class="empty-box">
-        <p>${query ? 'Bunday email topilmadi' : 'Hozircha emaillar yoʻq'}</p>
+        <p>${query ? 'Bunday email topilmadi' : (emailScope === 'banned' ? 'Banned emaillar yoʻq' : 'Hozircha emaillar yoʻq')}</p>
         <span style="font-size:12px; color:#64748b;">ADD +1 tugmasini bosing</span>
       </div>
     `;
